@@ -12,17 +12,19 @@
  */
 package org.openhab.binding.sma.internal;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * The {@link SmaConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SmaConfiguration {
 
-    /**
-     * Sample configuration parameters. Replace with your own.
-     */
-    public String hostname;
-    public String password;
-    public int refreshInterval;
+    public String btAddress = "";
+    public String userPassword = "";
+    public int cycle = 120;
+    public double longitude = 7;
+    public double latitude = 14;
 }
