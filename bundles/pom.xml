@@ -285,7 +285,6 @@
     <module>org.openhab.binding.powermax</module>
     <module>org.openhab.binding.proteusecometer</module>
     <module>org.openhab.binding.prowl</module>
-    <module>org.openhab.binding.publictransportswitzerland</module>
     <module>org.openhab.binding.pulseaudio</module>
     <module>org.openhab.binding.pushbullet</module>
     <module>org.openhab.binding.pushover</module>
@@ -318,6 +317,7 @@
     <module>org.openhab.binding.siemensrds</module>
     <module>org.openhab.binding.sinope</module>
     <module>org.openhab.binding.sleepiq</module>
+    <module>org.openhab.binding.sma</module>
     <module>org.openhab.binding.smaenergymeter</module>
     <module>org.openhab.binding.smartmeter</module>
     <module>org.openhab.binding.smhi</module>
