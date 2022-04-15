@@ -22,10 +22,9 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 @NonNullByDefault
 public class SmaConfiguration {
 
-    /**
-     * Sample configuration parameters. Replace with your own.
-     */
-    public String hostname = "";
-    public String password = "";
-    public int refreshInterval = 600;
+    public String btAddress = "";
+    public String userPassword = "";
+    public int cycle = 120;
+    public double longitude = 7;
+    public double latitude = 14;
 }
