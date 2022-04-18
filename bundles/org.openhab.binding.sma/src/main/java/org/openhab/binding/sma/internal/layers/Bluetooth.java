@@ -18,6 +18,9 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.TimeZone;
 
+import javax.microedition.io.Connector;
+import javax.microedition.io.StreamConnection;
+
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +43,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     protected short FCSChecksum = (short) 0xffff;
 
-    // protected static StreamConnection connection;
+    protected static StreamConnection connection;
     protected static DataOutputStream out;
     protected static DataInputStream in;
 
@@ -70,30 +73,30 @@ public class Bluetooth extends AbstractPhysicalLayer {
     public void open() throws IOException {
 
         close();
-        // if (connection == null) {
-        // connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
-        //
-        // out = connection.openDataOutputStream();
-        // in = connection.openDataInputStream();
-        // }
+        if (connection == null) {
+            connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
+
+            out = connection.openDataOutputStream();
+            in = connection.openDataInputStream();
+        }
     }
 
     @Override
     public void close() {
 
-        // if (connection != null) {
-        // try {
-        // out.close();
-        // in.close();
-        // connection.close();
-        // } catch (IOException e) {
-        // logger.debug("Error closing", e);
-        // }
-        // }
-        //
-        // connection = null;
-        // out = null;
-        // in = null;
+        if (connection != null) {
+            try {
+                out.close();
+                in.close();
+                connection.close();
+            } catch (IOException e) {
+                logger.debug("Error closing", e);
+            }
+        }
+
+        connection = null;
+        out = null;
+        in = null;
     }
 
     @Override
