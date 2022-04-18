@@ -12,17 +12,32 @@
  */
 package org.openhab.binding.sma.internal.handler;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.sma.internal.SmaBinding;
+import org.openhab.binding.sma.internal.SmaConfiguration;
 import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
+import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterDataType;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
+import org.openhab.binding.sma.internal.layers.Bluetooth;
+import org.openhab.binding.sma.internal.util.SunriseSunset;
 import org.openhab.core.config.discovery.DiscoveryService;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.ThingStatus;
+import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.types.Command;
 import org.osgi.framework.BundleContext;
@@ -106,113 +121,113 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     @Override
     public void run() {
-        logger.debug("SmaBridgeHandler.initRunnable run()");
+        logger.info("SmaBridgeHandler.initRunnable run()");
 
-        // SmaConfig config = getConfigAs(SmaConfig.class);
-        // if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
-        // logger.info("Nothing to do... it's dark.");
-        // return;
-        // }
-        //
-        // SmaBinding binding = new SmaBinding();
-        // BluetoothSolarInverterPlant inverter = new BluetoothSolarInverterPlant(
-        // binding.createDevice(config.btAddress, config.userPassword));
-        //
-        // logger.debug("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
-        // ThingStatus thingStatus = ThingStatus.UNKNOWN;
-        //
-        // try {
-        // getData(config, inverter);
-        //
-        // logger.debug("*******************");
-        //
-        // ArrayList<BluetoothSolarInverterPlant.Data> inverters = inverter.getInverters();
-        // logger.debug("{} inverters found:", inverters.size());
-        // // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
-        // boolean complete = true;
-        // for (BluetoothSolarInverterPlant.Data inv : inverters) {
-        //
-        // discoveryService.notifyDiscovery(inv.getSerial().suSyID,
-        // inv.getDeviceType() + " " + inv.getDeviceName());
-        //
-        // SmaHandler handler = attachedThings.get(new Integer(inv.getSerial().suSyID));
-        // if (handler != null) {
-        // handler.dataReceived(inv);
-        // } else {
-        // complete = false;
-        // }
-        //
-        // logger.debug("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
-        // logger.debug("Device Name: {}", inv.getDeviceName());
-        // // logger.info("Device Class: {}", inv.deviceClass);
-        // logger.debug("Device Type: {}", inv.getDeviceType());
-        // logger.debug("Software Version: {}", inv.swVersion);
-        // logger.debug("Serial number: {}", inv.getSerial().serial);
-        // }
-        // if (complete) {
-        // for (Entry<Integer, SmaHandler> handler : attachedThings.entrySet()) {
-        // if (!inverters.stream()
-        // .anyMatch(inv -> inv.getSerial().suSyID == handler.getKey() && inv.sumDataAvailable())) {
-        // complete = false;
-        // handler.getValue().setOffline();
-        // }
-        // }
-        // }
-        // if (complete) {
-        // double eTotal = 0.0;
-        // for (BluetoothSolarInverterPlant.Data inv : inverters) {
-        // eTotal += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
-        // }
-        //
-        // // double v1 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsA))
-        // // .doubleValue();
-        // // double v2 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsB))
-        // // .doubleValue();
-        // // double v3 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsC))
-        // // .doubleValue();
-        // // double vmax = Math.max(v1, Math.max(v2, v3));
-        //
-        // updateState(new ChannelUID(getThing().getUID(), "etotal"), new DecimalType(eTotal));
-        // // updateState(new ChannelUID(getThing().getUID(), "uacmax"), new DecimalType(vmax));
-        // }
-        // updateStatus(ThingStatus.ONLINE);
-        //
-        // } catch (Exception e) {
-        //
-        // logger.error("getTypeLabel failed: {}", e.getMessage());
-        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
-        // } finally {
-        //
-        // inverter.exit();
-        // logger.info("run() finished.");
-        // }
+        SmaConfiguration config = getConfigAs(SmaConfiguration.class);
+        if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
+            logger.info("Nothing to do... it's dark.");
+            return;
+        }
+
+        SmaBinding binding = new SmaBinding();
+        BluetoothSolarInverterPlant inverter = new BluetoothSolarInverterPlant(
+                binding.createDevice(config.btAddress, config.userPassword));
+
+        logger.info("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
+        ThingStatus thingStatus = ThingStatus.UNKNOWN;
+
+        try {
+            getData(config, inverter);
+
+            logger.info("*******************");
+
+            ArrayList<BluetoothSolarInverterPlant.Data> inverters = inverter.getInverters();
+            logger.info("{} inverters found:", inverters.size());
+            // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
+            boolean complete = true;
+            for (BluetoothSolarInverterPlant.Data inv : inverters) {
+
+                discoveryService.notifyDiscovery(inv.getSerial().suSyID,
+                        inv.getDeviceType() + " " + inv.getDeviceName());
+
+                SmaHandler handler = attachedThings.get(new Integer(inv.getSerial().suSyID));
+                if (handler != null) {
+                    handler.dataReceived(inv);
+                } else {
+                    complete = false;
+                }
+
+                logger.info("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
+                logger.info("Device Name:      {}", inv.getDeviceName());
+                // logger.info("Device Class: {}", inv.deviceClass);
+                logger.info("Device Type:      {}", inv.getDeviceType());
+                logger.info("Software Version: {}", inv.swVersion);
+                logger.info("Serial number:    {}", inv.getSerial().serial);
+            }
+            if (complete) {
+                for (Entry<Integer, SmaHandler> handler : attachedThings.entrySet()) {
+                    if (!inverters.stream()
+                            .anyMatch(inv -> inv.getSerial().suSyID == handler.getKey() && inv.sumDataAvailable())) {
+                        complete = false;
+                        handler.getValue().setOffline();
+                    }
+                }
+            }
+            if (complete) {
+                double eTotal = 0.0;
+                for (BluetoothSolarInverterPlant.Data inv : inverters) {
+                    eTotal += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
+                }
+
+                // double v1 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsA))
+                // .doubleValue();
+                // double v2 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsB))
+                // .doubleValue();
+                // double v3 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsC))
+                // .doubleValue();
+                // double vmax = Math.max(v1, Math.max(v2, v3));
+
+                updateState(new ChannelUID(getThing().getUID(), "etotal"), new DecimalType(eTotal));
+                // updateState(new ChannelUID(getThing().getUID(), "uacmax"), new DecimalType(vmax));
+            }
+            updateStatus(ThingStatus.ONLINE);
+
+        } catch (Exception e) {
+
+            logger.error("getTypeLabel failed: {}", e.getMessage());
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+        } finally {
+
+            inverter.exit();
+            logger.info("run() finished.");
+        }
     }
 
-    // private void getData(SmaConfig config, BluetoothSolarInverterPlant inverter) throws IOException {
-    //
-    // inverter.init(new Bluetooth(config.btAddress));
-    // inverter.logon(SmaUserGroup.User, config.userPassword);
-    // inverter.setInverterTime();
-    //
-    // InverterDataType[] required = new SmaDevice.InverterDataType[] { SmaDevice.InverterDataType.SoftwareVersion,
-    // SmaDevice.InverterDataType.TypeLabel, SmaDevice.InverterDataType.DeviceStatus,
-    // SmaDevice.InverterDataType.MaxACPower, SmaDevice.InverterDataType.EnergyProduction,
-    // SmaDevice.InverterDataType.SpotACVoltage, SmaDevice.InverterDataType.SpotACTotalPower };
-    //
-    // ArrayList<InverterDataType> remaining = new ArrayList<InverterDataType>(Arrays.asList(required));
-    //
-    // for (int i = 0; i < 3 && remaining.size() > 0; i++) {
-    // for (int j = remaining.size() - 1; j >= 0; j--) {
-    // if (!inverter.getInverterData(remaining.get(j))) {
-    // logger.error("getInverterData({}) failed", remaining.get(j).toString());
-    // } else {
-    // remaining.remove(j);
-    // }
-    // }
-    // }
-    //
-    // inverter.logoff();
-    // }
+    private void getData(SmaConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
+
+        inverter.init(new Bluetooth(config.btAddress));
+        inverter.logon(SmaUserGroup.User, config.userPassword);
+        inverter.setInverterTime();
+
+        InverterDataType[] required = new SmaDevice.InverterDataType[] { SmaDevice.InverterDataType.SoftwareVersion,
+                SmaDevice.InverterDataType.TypeLabel, SmaDevice.InverterDataType.DeviceStatus,
+                SmaDevice.InverterDataType.MaxACPower, SmaDevice.InverterDataType.EnergyProduction,
+                SmaDevice.InverterDataType.SpotACVoltage, SmaDevice.InverterDataType.SpotACTotalPower };
+
+        ArrayList<InverterDataType> remaining = new ArrayList<InverterDataType>(Arrays.asList(required));
+
+        for (int i = 0; i < 3 && remaining.size() > 0; i++) {
+            for (int j = remaining.size() - 1; j >= 0; j--) {
+                if (!inverter.getInverterData(remaining.get(j))) {
+                    logger.error("getInverterData({}) failed", remaining.get(j).toString());
+                } else {
+                    remaining.remove(j);
+                }
+            }
+        }
+
+        inverter.logoff();
+    }
 
     public void registerInverter(int susyId, SmaHandler smaHandler) {
         attachedThings.put(susyId, smaHandler);

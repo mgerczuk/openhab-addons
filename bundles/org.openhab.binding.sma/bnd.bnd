@@ -1,2 +1,2 @@
 Bundle-ClassPath: .,lib/bluecove-2.1.0.jar,lib/bluecove-gpl-2.1.0.jar
-Import-Package: org.openhab.core.config.discovery,org.openhab.core.i18n,org.openhab.core.library.types,org.openhab.core.thing,org.openhab.core.thing.binding,org.openhab.core.types,org.osgi.framework;version="[1.9,2)",org.osgi.service.component;version="[1.4,2)"
+Import-Package: org.openhab.core.config.discovery,org.openhab.core.i18n,org.openhab.core.library.types,org.openhab.core.thing,org.openhab.core.thing.binding,org.openhab.core.types,org.apache.log4j;version="[1.2,2)",org.osgi.framework;version="[1.9,2)",org.osgi.service.component;version="[1.4,2)",org.slf4j;version="[1.7,2)"

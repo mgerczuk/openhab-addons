@@ -2,44 +2,105 @@
 <thing:thing-descriptions bindingId="sma" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
-
-	<!-- Sample Thing Type -->
-	<thing-type id="sample">
-		<!-- Comment this in for Things which need a Bridge to function.
-			<supported-bridge-type-refs>
-			<bridge-type-ref id="SmaBridge" />
-			</supported-bridge-type-refs>
-		-->
-
-		<label>Sma Binding Thing</label>
-		<description>Sample thing for Sma Binding</description>
-
+	<!-- SMA Inverter Thing -->
+	<bridge-type id="bridge">
+		<label>SMA Inverter Bridge</label>
+		<description>Provides a bridge to an SMA inverter plant</description>
 		<channels>
-			<channel id="channel1" typeId="sample-channel"/>
+			<channel typeId="etotal" id="etotal"/>
+			<channel typeId="uacmax" id="uacmax"/>
 		</channels>
-
 		<config-description>
-			<parameter name="hostname" type="text" required="true">
-				<context>network-address</context>
-				<label>Hostname</label>
-				<description>Hostname or IP address of the device</description>
+			<parameter name="btAddress" type="text">
+				<label>Bluetooth Address</label>
+				<description>Specifies the Bluetooth address (only for main inverter)</description>
+				<default>00:00:00:00:00:00</default>
 			</parameter>
-			<parameter name="password" type="text" required="true">
-				<context>password</context>
-				<label>Password</label>
-				<description>Passwort to access the device</description>
+			<parameter name="userPassword" type="text">
+				<label>User Password</label>
+				<default>0000</default>
 			</parameter>
-			<parameter name="refreshInterval" type="integer" unit="s" min="1">
-				<label>Refresh Interval</label>
-				<description>Interval the device is polled in sec.</description>
+			<parameter name="cycle" type="integer">
+				<description>Interval in seconds</description>
+				<default>120</default>
+				<label>Cycle time</label>
+			</parameter>
+			<parameter name="longitude" type="decimal" step="0.000001">
+				<label>Longitude</label>
+			</parameter>
+			<parameter name="latitude" type="decimal" step="0.000001">
+				<label>Latitude</label>
+			</parameter>
+		</config-description>
+	</bridge-type>
+	<thing-type id="inverter">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="bridge"/>
+		</supported-bridge-type-refs>
+		<label>SMA Inverter</label>
+		<description>SMA Inverter</description>
+		<channels>
+			<channel typeId="etoday" id="etoday"/>
+			<channel typeId="etotal" id="etotal"/>
+			<channel typeId="uac1" id="uac1"/>
+			<channel typeId="uac2" id="uac2"/>
+			<channel typeId="uac3" id="uac3"/>
+			<channel typeId="totalpac" id="totalpac"/>
+			<channel typeId="invtype" id="invtype"/>
+		</channels>
+		<config-description>
+			<parameter name="susyid" type="integer">
+				<label>SUSyID</label>
 			</parameter>
 		</config-description>
 	</thing-type>
-
 	<!-- Sample Channel Type -->
-	<channel-type id="sample-channel">
-		<item-type>Number:Temperature</item-type>
-		<label>Example Temperature</label><!-- Use uppercase words, except prepositions. 2-3 words, max 25 chars -->
-		<description>Sample channel for Sma Binding</description>
+	<channel-type id="etoday">
+		<item-type>Number</item-type>
+		<label>EToday</label>
+		<description>Prouction today [kWh]</description>
+		<state readOnly="true" pattern="%.3f kWh"/>
+	</channel-type>
+	<channel-type id="etotal">
+		<item-type>Number</item-type>
+		<label>ETotal</label>
+		<description>Production total [kWh]</description>
+		<state readOnly="true" pattern="%.3f kWh"/>
+	</channel-type>
+	<channel-type id="uac1">
+		<item-type>Number</item-type>
+		<label>UAC1</label>
+		<description>Voltage AC1</description>
+		<state readOnly="true" pattern="%.2f V"/>
+	</channel-type>
+	<channel-type id="uac2">
+		<item-type>Number</item-type>
+		<label>UAC2</label>
+		<description>Voltage AC2</description>
+		<state readOnly="true" pattern="%.2f V"/>
+	</channel-type>
+	<channel-type id="uac3">
+		<item-type>Number</item-type>
+		<label>UAC3</label>
+		<description>Voltage AC3</description>
+		<state readOnly="true" pattern="%.2f V"/>
+	</channel-type>
+	<channel-type id="uacmax">
+		<item-type>Number</item-type>
+		<label>UACMax</label>
+		<description>Voltage AC Max</description>
+		<state readOnly="true" pattern="%.2f V"/>
+	</channel-type>
+	<channel-type id="totalpac">
+		<item-type>Number</item-type>
+		<label>TotalPAC</label>
+		<description>Total power AC</description>
+		<state readOnly="true" pattern="%.3f kW"/>
+	</channel-type>
+	<channel-type id="invtype">
+		<item-type>String</item-type>
+		<label>InverterType</label>
+		<description>Inverter Type</description>
+		<state readOnly="true"/>
 	</channel-type>
 </thing:thing-descriptions>
