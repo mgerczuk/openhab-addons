@@ -12,6 +12,9 @@
  */
 package org.openhab.binding.sma.internal;
 
+/**
+ * @author Martin Gerczuk - Initial contribution
+ */
 public class SmaInverterConfiguration {
     public int susyid;
 }

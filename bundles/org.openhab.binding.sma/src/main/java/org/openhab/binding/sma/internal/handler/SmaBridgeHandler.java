@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2021 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -121,7 +121,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     @Override
     public void run() {
-        logger.info("SmaBridgeHandler.initRunnable run()");
+        logger.debug("SmaBridgeHandler.initRunnable run()");
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
         if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
@@ -133,16 +133,16 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         BluetoothSolarInverterPlant inverter = new BluetoothSolarInverterPlant(
                 binding.createDevice(config.btAddress, config.userPassword));
 
-        logger.info("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
+        logger.debug("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
         ThingStatus thingStatus = ThingStatus.UNKNOWN;
 
         try {
             getData(config, inverter);
 
-            logger.info("*******************");
+            logger.debug("*******************");
 
             ArrayList<BluetoothSolarInverterPlant.Data> inverters = inverter.getInverters();
-            logger.info("{} inverters found:", inverters.size());
+            logger.debug("{} inverters found:", inverters.size());
             // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
             boolean complete = true;
             for (BluetoothSolarInverterPlant.Data inv : inverters) {
@@ -157,12 +157,12 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                     complete = false;
                 }
 
-                logger.info("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
-                logger.info("Device Name:      {}", inv.getDeviceName());
+                logger.debug("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
+                logger.debug("Device Name:      {}", inv.getDeviceName());
                 // logger.info("Device Class: {}", inv.deviceClass);
-                logger.info("Device Type:      {}", inv.getDeviceType());
-                logger.info("Software Version: {}", inv.swVersion);
-                logger.info("Serial number:    {}", inv.getSerial().serial);
+                logger.debug("Device Type:      {}", inv.getDeviceType());
+                logger.debug("Software Version: {}", inv.swVersion);
+                logger.debug("Serial number:    {}", inv.getSerial().serial);
             }
             if (complete) {
                 for (Entry<Integer, SmaHandler> handler : attachedThings.entrySet()) {
