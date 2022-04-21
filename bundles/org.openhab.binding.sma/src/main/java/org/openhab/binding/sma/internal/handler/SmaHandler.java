@@ -12,11 +12,9 @@
  */
 package org.openhab.binding.sma.internal.handler;
 
-import static org.openhab.binding.sma.internal.SmaBindingConstants.PARAMETER_SUSYID;
-
-import java.math.BigDecimal;
 import java.util.Map.Entry;
 
+import org.openhab.binding.sma.internal.SmaInverterConfiguration;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
 import org.openhab.core.thing.Bridge;
@@ -64,8 +62,9 @@ public class SmaHandler extends BaseThingHandler {
         Bridge bridge = getBridge();
         bridgeHandler = bridge == null ? null : (SmaBridgeHandler) bridge.getHandler();
 
-        BigDecimal dec = (BigDecimal) getConfig().get(PARAMETER_SUSYID);
-        susyId = dec.intValue();
+        SmaInverterConfiguration config = getConfigAs(SmaInverterConfiguration.class);
+        susyId = config.susyid;
+        logger.info("susyId = {}", susyId);
 
         bridgeHandler.registerInverter(susyId, this);
 

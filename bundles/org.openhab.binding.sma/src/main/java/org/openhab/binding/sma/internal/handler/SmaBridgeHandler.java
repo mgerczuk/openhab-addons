@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.sma.internal.SmaBinding;
-import org.openhab.binding.sma.internal.SmaConfiguration;
+import org.openhab.binding.sma.internal.SmaBridgeConfiguration;
 import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
@@ -101,9 +101,9 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         // SmaConfig config = getConfigAs(SmaConfig.class);
         // schedule = scheduler.scheduleWithFixedDelay(this, 1, config.cycle, TimeUnit.SECONDS);
 
-        // zum Testen starten wir die Abfrage alle 10 Minuten um 5,15,25,...
+        // zum Testen starten wir die Abfrage alle 10 Minuten um 7,17,27,...
         int delay = 10 - (new Date().getMinutes() % 10);
-        delay = (delay + 5) % 10;
+        delay = (delay + 7) % 10;
         schedule = scheduler.scheduleAtFixedRate(this, delay, 10, TimeUnit.MINUTES);
     }
 
@@ -123,7 +123,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
     public void run() {
         logger.info("SmaBridgeHandler.initRunnable run()");
 
-        SmaConfiguration config = getConfigAs(SmaConfiguration.class);
+        SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
         if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
             logger.info("Nothing to do... it's dark.");
             return;
@@ -203,7 +203,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         }
     }
 
-    private void getData(SmaConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
+    private void getData(SmaBridgeConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
 
         inverter.init(new Bluetooth(config.btAddress));
         inverter.logon(SmaUserGroup.User, config.userPassword);

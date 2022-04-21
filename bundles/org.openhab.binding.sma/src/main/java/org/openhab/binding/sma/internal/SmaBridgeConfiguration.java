@@ -15,12 +15,12 @@ package org.openhab.binding.sma.internal;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link SmaConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link SmaBridgeConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault
-public class SmaConfiguration {
+public class SmaBridgeConfiguration {
 
     public String btAddress = "";
     public String userPassword = "";
