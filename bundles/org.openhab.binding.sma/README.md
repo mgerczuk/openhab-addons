@@ -1,56 +1,44 @@
-# Sma Binding
+# SMA Binding
 
-_Give some details about what this binding is meant for - a protocol, system, specific device._
+This binding is reads values from SMA inverters over Bluetooth.
 
-_If possible, provide some resources like pictures, a video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
+The code is mostly ported from the [SBFspot](https://github.com/SBFspot/SBFspot) project
 
 ## Supported Things
 
-_Please describe the different supported things / devices within this section._
-_Which different types are supported, which models were tested etc.?_
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/OH-INF/thing``` of your binding._
+SMA inverters with Bluetooth interface.
 
 ## Discovery
 
-_Describe the available auto-discovery features here. Mention for what it works and what needs to be kept in mind when using it._
+After creating the SMA inverter bridge representing the inverter network, the single inverters are discovered automatically and added to the inbox.
 
 ## Binding Configuration
 
-_If your binding requires or supports general configuration settings, please create a folder ```cfg``` and place the configuration file ```<bindingId>.cfg``` inside it. In this section, you should link to this file and provide some information about the options. The file could e.g. look like:_
-
-```
-# Configuration for the Sma Binding
-#
-# Default secret key for the pairing of the Sma Thing.
-# It has to be between 10-40 (alphanumeric) characters.
-# This may be changed by the user for security reasons.
-secret=openHABSecret
-```
-
-_Note that it is planned to generate some part of this based on the information that is available within ```src/main/resources/OH-INF/binding``` of your binding._
-
-_If your binding does not offer any generic configurations, you can remove this section completely._
+No binding configuration required.
 
 ## Thing Configuration
 
-_Describe what is needed to manually configure a thing, either through the UI or via a thing-file. This should be mainly about its mandatory and optional configuration parameters. A short example entry for a thing file can help!_
+Bridge configuration:
 
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/OH-INF/thing``` of your binding._
+The inverter things are created automatically and do not need further configuration.
 
 ## Channels
 
-_Here you should provide information about available channel types, what their meaning is and how they can be used._
+Bridge channels
 
-_Note that it is planned to generate some part of this based on the XML files within ```src/main/resources/OH-INF/thing``` of your binding._
+| channel | type   | description                |
+|---------|--------|----------------------------|
+| etotal  | Number | Production total sum [kWh] |
+
+
+Inverter channels
 
 | channel  | type   | description                  |
 |----------|--------|------------------------------|
-| control  | Switch | This is the control channel  |
-
-## Full Example
-
-_Provide a full usage example based on textual configuration files (*.things, *.items, *.sitemap)._
-
-## Any custom content here!
-
-_Feel free to add additional sections for whatever you think should also be mentioned about your binding!_
+| etoday   | Number | Production today [kWh]       |
+| etotal   | Number | Production total [kWh]       |
+| uac1     | Number | Voltage AC1                  |
+| uac2     | Number | Voltage AC2                  |
+| uac3     | Number | Voltage AC3                  |
+| totalpac | Number | Total power AC               |
+| invtype  | String | Inverter type                |

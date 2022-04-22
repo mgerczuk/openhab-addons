@@ -32,6 +32,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     private static final Logger logger = LoggerFactory.getLogger(Bluetooth.class);
 
+    private static final long READ_TIMEOUT_MILLIS = 15000;
+
     // length of package header
     public static final int HEADERLENGTH = 18;
 
@@ -347,7 +349,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
             ReadRunnable runnable = new ReadRunnable(b, off, len);
             Thread t = new Thread(runnable);
             t.start();
-            t.join(10000);
+            t.join(READ_TIMEOUT_MILLIS);
             if (t.isAlive()) {
                 t.interrupt();
                 logger.debug("Timeout reading socket");

@@ -216,14 +216,20 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         ArrayList<InverterDataType> remaining = new ArrayList<InverterDataType>(Arrays.asList(required));
 
-        for (int i = 0; i < 3 && remaining.size() > 0; i++) {
+        for (int retry = 0; retry < 3 && !remaining.isEmpty(); retry++) {
+            if (retry > 0) {
+                logger.info("retrying {} item(s)", remaining.size());
+            }
+
             for (int j = remaining.size() - 1; j >= 0; j--) {
-                if (!inverter.getInverterData(remaining.get(j))) {
-                    logger.error("getInverterData({}) failed", remaining.get(j).toString());
-                } else {
+                if (inverter.getInverterData(remaining.get(j))) {
                     remaining.remove(j);
                 }
             }
+        }
+
+        for (int i = 0; i < remaining.size(); i++) {
+            logger.error("getInverterData({}) failed", remaining.get(i).toString());
         }
 
         inverter.logoff();

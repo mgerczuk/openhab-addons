@@ -58,7 +58,7 @@
 	<channel-type id="etoday">
 		<item-type>Number</item-type>
 		<label>EToday</label>
-		<description>Prouction today [kWh]</description>
+		<description>Production today [kWh]</description>
 		<state readOnly="true" pattern="%.3f kWh"/>
 	</channel-type>
 	<channel-type id="etotal">

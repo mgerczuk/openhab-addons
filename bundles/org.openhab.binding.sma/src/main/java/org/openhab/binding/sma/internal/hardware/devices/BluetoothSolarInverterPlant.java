@@ -954,7 +954,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
         } catch (IOException e) {
-            logger.error("unable to communicate with device: {}", e.getMessage());
+            logger.warn("unable to communicate with device: {}", e.getMessage());
             return false;
         } finally {
             // layer.close();
