@@ -195,7 +195,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         } catch (Exception e) {
 
-            logger.error("getTypeLabel failed: {}", e.getMessage());
+            logger.error("getData failed: {}", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } finally {
 
