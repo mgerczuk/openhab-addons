@@ -333,113 +333,128 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     public void logon(SmaUserGroup userGroup, String password) throws IOException {
         logger.debug("logon SMA Inverter");
 
-        // layer.open();
-        byte pw[] = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        try {
+            // layer.open();
+            byte pw[] = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        byte encChar = (byte) ((userGroup == SmaUserGroup.User) ? 0x88 : 0xBB);
-        // Encode password
-        int idx;
-        for (idx = 0; (idx < password.length()) && (idx < 12); idx++) {
-            pw[idx] = (byte) (password.charAt(idx) + (encChar & 0xff));
-        }
-        for (; idx < 12; idx++) {
-            pw[idx] = encChar;
-        }
-
-        boolean validPcktID = false;
-
-        int now;
-
-        do {
-            pcktID++;
-            now = layer.currentTimeSeconds();
-
-            layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-            layer.writePacket((byte) 0x0E, (byte) 0xA0, (short) 0x0100, PhysicalLayer.ANYSUSYID,
-                    PhysicalLayer.ANYSERIAL, pcktID);
-            layer.write(0xFFFD040C);
-            layer.write(userGroup.getValue()); // User / Installer
-            layer.write(0x00000384); // Timeout = 900sec ?
-            layer.write(now);
-            layer.write(0x0);
-            layer.write(pw, pw.length);
-            layer.writePacketTrailer();
-            layer.writePacketLength();
-        } while (!layer.isCrcValid());
-
-        layer.send();
-
-        do {
-            // All inverters *should* reply with their SUSyID & SerialNr
-            // (and some other unknown info)
-            for (int i = 0; i < inverters.size(); i++) {
-                byte[] data = layer.receiveAll(0x01);
-                SmaBluetoothAddress address = layer.getHeaderAddress();
-
-                short rcvpcktID = (short) (AbstractPhysicalLayer.getShort(data, 27) & 0x7FFF);
-                logger.debug("rcvpcktID id {}", rcvpcktID);
-
-                if ((pcktID == rcvpcktID) && (AbstractPhysicalLayer.getInt(data, 41) == now)) {
-                    BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
-                    if (current != null) {
-                        current.setSerial(new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 15),
-                                AbstractPhysicalLayer.getInt(data, 17)));
-
-                        validPcktID = true;
-                    } else {
-                        logger.debug("Unexpected response from {}", address.toString());
-                    }
-                }
-
+            byte encChar = (byte) ((userGroup == SmaUserGroup.User) ? 0x88 : 0xBB);
+            // Encode password
+            int idx;
+            for (idx = 0; (idx < password.length()) && (idx < 12); idx++) {
+                pw[idx] = (byte) (password.charAt(idx) + (encChar & 0xff));
             }
-        } while (!validPcktID);
+            for (; idx < 12; idx++) {
+                pw[idx] = encChar;
+            }
+
+            boolean validPcktID = false;
+
+            int now;
+
+            do {
+                pcktID++;
+                now = layer.currentTimeSeconds();
+
+                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
+                layer.writePacket((byte) 0x0E, (byte) 0xA0, (short) 0x0100, PhysicalLayer.ANYSUSYID,
+                        PhysicalLayer.ANYSERIAL, pcktID);
+                layer.write(0xFFFD040C);
+                layer.write(userGroup.getValue()); // User / Installer
+                layer.write(0x00000384); // Timeout = 900sec ?
+                layer.write(now);
+                layer.write(0x0);
+                layer.write(pw, pw.length);
+                layer.writePacketTrailer();
+                layer.writePacketLength();
+            } while (!layer.isCrcValid());
+
+            layer.send();
+
+            do {
+                // All inverters *should* reply with their SUSyID & SerialNr
+                // (and some other unknown info)
+                for (int i = 0; i < inverters.size(); i++) {
+                    byte[] data = layer.receiveAll(0x01);
+                    SmaBluetoothAddress address = layer.getHeaderAddress();
+
+                    short rcvpcktID = (short) (AbstractPhysicalLayer.getShort(data, 27) & 0x7FFF);
+                    logger.debug("rcvpcktID id {}", rcvpcktID);
+
+                    if ((pcktID == rcvpcktID) && (AbstractPhysicalLayer.getInt(data, 41) == now)) {
+                        BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
+                        if (current != null) {
+                            current.setSerial(new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 15),
+                                    AbstractPhysicalLayer.getInt(data, 17)));
+
+                            validPcktID = true;
+                        } else {
+                            logger.debug("Unexpected response from {}", address.toString());
+                        }
+                    }
+
+                }
+            } while (!validPcktID);
+        } catch (IOException e) {
+            logger.error("logon failed", e);
+            throw e;
+        }
     }
 
     @Override
-    public void logoff() throws IOException {
+    public void logoff() {// throws IOException {
         logger.debug("logoff SMA Inverter");
-        do {
-            pcktID++;
-            layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-            layer.writePacket((byte) 0x08, (byte) 0xA0, (short) 0x0300, PhysicalLayer.ANYSUSYID,
-                    PhysicalLayer.ANYSERIAL, pcktID);
-            layer.write(0xFFFD010E);
-            layer.write(0xFFFFFFFF);
-            layer.writePacketTrailer();
-            layer.writePacketLength();
-        } while (!layer.isCrcValid());
-        layer.send();
+        try {
+            do {
+                pcktID++;
+                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
+                layer.writePacket((byte) 0x08, (byte) 0xA0, (short) 0x0300, PhysicalLayer.ANYSUSYID,
+                        PhysicalLayer.ANYSERIAL, pcktID);
+                layer.write(0xFFFD010E);
+                layer.write(0xFFFFFFFF);
+                layer.writePacketTrailer();
+                layer.writePacketLength();
+            } while (!layer.isCrcValid());
+            layer.send();
+        } catch (IOException e) {
+            logger.error("logoff failed", e);
+            // throw e;
+        }
     }
 
     public void setInverterTime() throws IOException {
         logger.debug("SetInverterTime()");
 
-        int localtime = layer.currentTimeSeconds();
-        int tzOffset = layer.getTimezoneOffset();
+        try {
+            int localtime = layer.currentTimeSeconds();
+            int tzOffset = layer.getTimezoneOffset();
 
-        logger.debug("Local Time: {}", new Date(localtime * 1000L));
-        logger.debug("TZ offset (s): {}", tzOffset);
+            logger.debug("Local Time: {}", new Date(localtime * 1000L));
+            logger.debug("TZ offset (s): {}", tzOffset);
 
-        do {
-            pcktID++;
-            layer.writePacketHeader(0x01, rootDeviceAdress);
-            layer.writePacket((byte) 0x10, (byte) 0xA0, (short) 0, PhysicalLayer.ANYSUSYID, PhysicalLayer.ANYSERIAL,
-                    pcktID);
-            layer.write(0xF000020A);
-            layer.write(0x00236D00);
-            layer.write(0x00236D00);
-            layer.write(0x00236D00);
-            layer.write(localtime);
-            layer.write(localtime);
-            layer.write(localtime);
-            layer.write(tzOffset);
-            layer.write(1);
-            layer.write(1);
-            layer.writePacketTrailer();
-            layer.writePacketLength();
-        } while (!layer.isCrcValid());
+            do {
+                pcktID++;
+                layer.writePacketHeader(0x01, rootDeviceAdress);
+                layer.writePacket((byte) 0x10, (byte) 0xA0, (short) 0, PhysicalLayer.ANYSUSYID, PhysicalLayer.ANYSERIAL,
+                        pcktID);
+                layer.write(0xF000020A);
+                layer.write(0x00236D00);
+                layer.write(0x00236D00);
+                layer.write(0x00236D00);
+                layer.write(localtime);
+                layer.write(localtime);
+                layer.write(localtime);
+                layer.write(tzOffset);
+                layer.write(1);
+                layer.write(1);
+                layer.writePacketTrailer();
+                layer.writePacketLength();
+            } while (!layer.isCrcValid());
 
-        layer.send();
+            layer.send();
+        } catch (IOException e) {
+            logger.error("setInverterTime failed", e);
+            throw e;
+        }
     }
 
     public ArrayList<BluetoothSolarInverterPlant.Data> getInverters() {
@@ -954,7 +969,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
         } catch (IOException e) {
-            logger.warn("unable to communicate with device: {}", e.getMessage());
+            logger.info("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
         } finally {
             // layer.close();

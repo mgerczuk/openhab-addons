@@ -125,7 +125,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
         if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
-            logger.info("Nothing to do... it's dark.");
+            logger.debug("Nothing to do... it's dark.");
             return;
         }
 
@@ -154,6 +154,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 if (handler != null) {
                     handler.dataReceived(inv);
                 } else {
+                    logger.info("No handler for suSyID = {}", inv.getSerial().suSyID);
                     complete = false;
                 }
 
@@ -199,7 +200,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         } finally {
 
             inverter.exit();
-            logger.info("run() finished.");
+            logger.debug("run() finished.");
         }
     }
 
@@ -217,9 +218,6 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         ArrayList<InverterDataType> remaining = new ArrayList<InverterDataType>(Arrays.asList(required));
 
         for (int retry = 0; retry < 3 && !remaining.isEmpty(); retry++) {
-            if (retry > 0) {
-                logger.info("retrying {} item(s)", remaining.size());
-            }
 
             for (int j = remaining.size() - 1; j >= 0; j--) {
                 if (inverter.getInverterData(remaining.get(j))) {
