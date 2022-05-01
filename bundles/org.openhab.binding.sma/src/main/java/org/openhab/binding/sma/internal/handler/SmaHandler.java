@@ -14,6 +14,7 @@ package org.openhab.binding.sma.internal.handler;
 
 import java.util.Map.Entry;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.openhab.binding.sma.internal.SmaInverterConfiguration;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
@@ -97,5 +98,10 @@ public class SmaHandler extends BaseThingHandler {
 
     public void setOffline() {
         updateStatus(ThingStatus.OFFLINE);
+    }
+
+    @Override
+    public @NonNull String toString() {
+        return String.format("SmaHandler {suSyID = %d}", susyId);
     }
 }

@@ -136,6 +136,11 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         logger.debug("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
         ThingStatus thingStatus = ThingStatus.UNKNOWN;
 
+        HashMap<Integer, SmaHandler> attachedThingsCopy;
+        synchronized (attachedThings) {
+            attachedThingsCopy = new HashMap<Integer, SmaHandler>(attachedThings);
+        }
+
         try {
             getData(config, inverter);
 
@@ -150,11 +155,13 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 discoveryService.notifyDiscovery(inv.getSerial().suSyID,
                         inv.getDeviceType() + " " + inv.getDeviceName());
 
-                SmaHandler handler = attachedThings.get(new Integer(inv.getSerial().suSyID));
+                logger.info("attachedThings = {}", attachedThingsCopy.toString());
+                SmaHandler handler = attachedThingsCopy.get(new Integer(inv.getSerial().suSyID));
                 if (handler != null) {
                     handler.dataReceived(inv);
                 } else {
-                    logger.info("No handler for suSyID = {}", inv.getSerial().suSyID);
+                    logger.info("No handler for suSyID = {} attachedThings.size() = {}", inv.getSerial().suSyID,
+                            attachedThingsCopy.size());
                     complete = false;
                 }
 
@@ -166,41 +173,86 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 logger.debug("Serial number:    {}", inv.getSerial().serial);
             }
             if (complete) {
-                for (Entry<Integer, SmaHandler> handler : attachedThings.entrySet()) {
-                    if (!inverters.stream()
-                            .anyMatch(inv -> inv.getSerial().suSyID == handler.getKey() && inv.sumDataAvailable())) {
+                for (Entry<Integer, SmaHandler> handler : attachedThingsCopy.entrySet()) {
+                    if (!inverters.stream().anyMatch(inv -> inv.getSerial().suSyID == handler.getKey())) {
+                        logger.info("no inverter for handler with suSyID = {}", handler.getKey());
                         complete = false;
                         handler.getValue().setOffline();
                     }
                 }
             }
             if (complete) {
-                double eTotal = 0.0;
-                for (BluetoothSolarInverterPlant.Data inv : inverters) {
-                    eTotal += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
-                }
-
-                // double v1 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsA))
-                // .doubleValue();
-                // double v2 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsB))
-                // .doubleValue();
-                // double v3 = ((DecimalType) inverters.get(0).getState(SmaDevice.LRIDefinition.GridMsPhVphsC))
-                // .doubleValue();
-                // double vmax = Math.max(v1, Math.max(v2, v3));
-
-                updateState(new ChannelUID(getThing().getUID(), "etotal"), new DecimalType(eTotal));
-                // updateState(new ChannelUID(getThing().getUID(), "uacmax"), new DecimalType(vmax));
+                updateSums(inverters);
             }
             updateStatus(ThingStatus.ONLINE);
 
         } catch (Exception e) {
 
-            logger.error("getTypeLabel failed: {}", e.getMessage());
+            logger.error("run() failed: {}", e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } finally {
 
             inverter.exit();
             logger.debug("run() finished.");
+        }
+    }
+
+    private void updateSums(ArrayList<BluetoothSolarInverterPlant.Data> inverters) {
+        double eTotal = 0.0;
+        boolean eTotalValid = true;
+        double eToday = 0.0;
+        boolean eTodayValid = true;
+        double uacMax = 0.0;
+        boolean uacMaxValid = false;
+        double totalPac = 0.0;
+        boolean totalPacValid = true;
+
+        for (BluetoothSolarInverterPlant.Data inv : inverters) {
+
+            if (eTotalValid && inv.isValid(SmaDevice.LRIDefinition.MeteringTotWhOut)) {
+                eTotal += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
+            } else {
+                eTotalValid = false;
+            }
+
+            if (eTodayValid && inv.isValid(SmaDevice.LRIDefinition.MeteringDyWhOut)) {
+                eToday += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringDyWhOut)).doubleValue();
+            } else {
+                eTodayValid = false;
+            }
+
+            for (SmaDevice.LRIDefinition lriDef : new SmaDevice.LRIDefinition[] { SmaDevice.LRIDefinition.GridMsPhVphsA,
+                    SmaDevice.LRIDefinition.GridMsPhVphsB, SmaDevice.LRIDefinition.GridMsPhVphsC }) {
+                if (inv.isValid(lriDef)) {
+                    double uac = ((DecimalType) inv.getState(lriDef)).doubleValue();
+                    if (uac > uacMax) {
+                        uacMax = uac;
+                    }
+                    uacMaxValid = true;
+                }
+            }
+
+            if (eTodayValid && inv.isValid(SmaDevice.LRIDefinition.GridMsTotW)) {
+                totalPac += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.GridMsTotW)).doubleValue();
+            } else {
+                totalPacValid = false;
+            }
+        }
+
+        if (eTotalValid) {
+            updateState(new ChannelUID(getThing().getUID(), "etotal"), new DecimalType(eTotal));
+        }
+
+        if (eTodayValid) {
+            updateState(new ChannelUID(getThing().getUID(), "etoday"), new DecimalType(eToday));
+        }
+
+        if (uacMaxValid) {
+            updateState(new ChannelUID(getThing().getUID(), "uacmax"), new DecimalType(uacMax));
+        }
+
+        if (totalPacValid) {
+            updateState(new ChannelUID(getThing().getUID(), "totalpac"), new DecimalType(totalPac));
         }
     }
 
@@ -234,10 +286,16 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
     }
 
     public void registerInverter(int susyId, SmaHandler smaHandler) {
-        attachedThings.put(susyId, smaHandler);
+        synchronized (attachedThings) {
+            attachedThings.put(susyId, smaHandler);
+            logger.info("registerInverter({}) finished: attachedThings.size() = {}", susyId, attachedThings.size());
+        }
     }
 
     public void unregisterInverter(int susyId, SmaHandler smaHandler) {
-        attachedThings.remove(susyId);
+        synchronized (attachedThings) {
+            attachedThings.remove(susyId);
+            logger.info("unregisterInverter({}) finished: attachedThings.size() = {}", susyId, attachedThings.size());
+        }
     }
 }

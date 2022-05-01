@@ -159,6 +159,10 @@ public abstract class SolarInverter extends AbstractSmaDevice {
             return values.entrySet();
         }
 
+        public boolean isValid(LRIDefinition lri) {
+            return values.containsKey(lri);
+        }
+
         public State getState(LRIDefinition lri) {
             return values.get(lri);
         }

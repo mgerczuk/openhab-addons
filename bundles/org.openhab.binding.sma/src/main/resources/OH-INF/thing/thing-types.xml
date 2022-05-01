@@ -7,8 +7,10 @@
 		<label>SMA Inverter Bridge</label>
 		<description>Provides a bridge to an SMA inverter plant</description>
 		<channels>
+			<channel typeId="etoday" id="etoday"/>
 			<channel typeId="etotal" id="etotal"/>
 			<channel typeId="uacmax" id="uacmax"/>
+			<channel typeId="totalpac" id="totalpac"/>
 		</channels>
 		<config-description>
 			<parameter name="btAddress" type="text">

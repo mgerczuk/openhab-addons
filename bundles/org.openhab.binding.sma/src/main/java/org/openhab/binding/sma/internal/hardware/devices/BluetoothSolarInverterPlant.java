@@ -395,8 +395,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 }
             } while (!validPcktID);
         } catch (IOException e) {
-            logger.error("logon failed", e);
-            throw e;
+            throw new IOException("logon failed: " + e.getMessage());
         }
     }
 
