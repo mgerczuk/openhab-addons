@@ -74,6 +74,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         this.layer = layer;
 
         if (isInit) {
+            logger.error("unexpected isInit == true");
             return;
         }
 
@@ -400,7 +401,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     }
 
     @Override
-    public void logoff() {// throws IOException {
+    public void logoff() throws IOException {
         logger.debug("logoff SMA Inverter");
         try {
             do {
@@ -415,8 +416,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             } while (!layer.isCrcValid());
             layer.send();
         } catch (IOException e) {
-            logger.error("logoff failed", e);
-            // throw e;
+            throw new IOException("logoff failed: " + e.getMessage());
         }
     }
 
@@ -451,8 +451,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
             layer.send();
         } catch (IOException e) {
-            logger.error("setInverterTime failed", e);
-            throw e;
+            throw new IOException("setInverterTime failed: " + e.getMessage());
         }
     }
 
@@ -968,7 +967,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
         } catch (IOException e) {
-            logger.info("getInverterData({}) failed: {}", type, e.getMessage());
+            logger.debug("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
         } finally {
             // layer.close();
