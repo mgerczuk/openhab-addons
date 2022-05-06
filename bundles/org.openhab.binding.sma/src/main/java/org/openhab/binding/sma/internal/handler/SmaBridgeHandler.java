@@ -155,7 +155,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 discoveryService.notifyDiscovery(inv.getSerial().suSyID,
                         inv.getDeviceType() + " " + inv.getDeviceName());
 
-                logger.info("attachedThings = {}", attachedThingsCopy.toString());
+                logger.debug("attachedThings = {}", attachedThingsCopy.toString());
                 SmaHandler handler = attachedThingsCopy.get(new Integer(inv.getSerial().suSyID));
                 if (handler != null) {
                     handler.dataReceived(inv);

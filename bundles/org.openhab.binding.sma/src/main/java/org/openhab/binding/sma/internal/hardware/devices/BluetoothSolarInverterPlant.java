@@ -317,9 +317,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
             return;
         } catch (IOException e) {
-            logger.error("can't initialize inverter plant", e);
             layer.close();
-            throw e;
+            throw new IOException("can't initialize inverter plant: " + e.getMessage());
         } finally {
             // layer.close();
         }
