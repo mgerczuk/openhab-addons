@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal;
+package org.openhab.binding.luxtroniklegacy.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,11 +23,11 @@ import java.util.concurrent.TimeUnit;
 import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.luxtronikheatpump.internal.enums.HeatpumpChannel;
-import org.openhab.binding.luxtronikheatpump.internal.enums.HeatpumpCoolingOperationMode;
-import org.openhab.binding.luxtronikheatpump.internal.enums.HeatpumpOperationMode;
-import org.openhab.binding.luxtronikheatpump.internal.exceptions.InvalidChannelException;
-import org.openhab.binding.luxtronikheatpump.internal.exceptions.InvalidOperationModeException;
+import org.openhab.binding.luxtroniklegacy.internal.enums.HeatpumpChannel;
+import org.openhab.binding.luxtroniklegacy.internal.enums.HeatpumpCoolingOperationMode;
+import org.openhab.binding.luxtroniklegacy.internal.enums.HeatpumpOperationMode;
+import org.openhab.binding.luxtroniklegacy.internal.exceptions.InvalidChannelException;
+import org.openhab.binding.luxtroniklegacy.internal.exceptions.InvalidOperationModeException;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
@@ -48,25 +48,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link LuxtronikHeatpumpHandler} is responsible for handling commands, which are
+ * The {@link LuxtronikLegacyHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Stefan Giehl - Initial contribution
  */
 @NonNullByDefault
-public class LuxtronikHeatpumpHandler extends BaseThingHandler {
+public class LuxtronikLegacyHandler extends BaseThingHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(LuxtronikHeatpumpHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(LuxtronikLegacyHandler.class);
     private final Set<ScheduledFuture<?>> scheduledFutures = new HashSet<>();
     private static final int RETRY_INTERVAL_SEC = 60;
     private boolean tiggerChannelUpdate = false;
     private final LuxtronikTranslationProvider translationProvider;
-    private LuxtronikHeatpumpConfiguration config;
+    private LuxtronikLegacyConfiguration config;
 
-    public LuxtronikHeatpumpHandler(Thing thing, LuxtronikTranslationProvider translationProvider) {
+    public LuxtronikLegacyHandler(Thing thing, LuxtronikTranslationProvider translationProvider) {
         super(thing);
         this.translationProvider = translationProvider;
-        config = new LuxtronikHeatpumpConfiguration();
+        config = new LuxtronikLegacyConfiguration();
     }
 
     @Override
@@ -202,7 +202,7 @@ public class LuxtronikHeatpumpHandler extends BaseThingHandler {
 
     @Override
     public void initialize() {
-        config = getConfigAs(LuxtronikHeatpumpConfiguration.class);
+        config = getConfigAs(LuxtronikLegacyConfiguration.class);
 
         if (!config.isValid()) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
@@ -277,7 +277,7 @@ public class LuxtronikHeatpumpHandler extends BaseThingHandler {
             Integer channelId = channel.getChannelId();
             int length = channel.isWritable() ? heatpumpParams.length : heatpumpValues.length;
             ChannelUID channelUID = new ChannelUID(thing.getUID(), channel.getCommand());
-            ChannelTypeUID channelTypeUID = new ChannelTypeUID(LuxtronikHeatpumpBindingConstants.BINDING_ID,
+            ChannelTypeUID channelTypeUID = new ChannelTypeUID(LuxtronikLegacyBindingConstants.BINDING_ID,
                     channel.getCommand());
             if ((channelId != null && length <= channelId)
                     || (config.showAllChannels == Boolean.FALSE && !channel.isVisible(visibilityValues))) {

@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal;
+package org.openhab.binding.luxtroniklegacy.internal;
 
-import static org.openhab.binding.luxtronikheatpump.internal.LuxtronikHeatpumpBindingConstants.*;
+import static org.openhab.binding.luxtroniklegacy.internal.LuxtronikLegacyBindingConstants.*;
 
 import java.util.Set;
 
@@ -31,20 +31,20 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
- * The {@link LuxtronikHeatpumpHandlerFactory} is responsible for creating things and thing
+ * The {@link LuxtronikLegacyHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
  * @author Stefan Giehl - Initial contribution
  */
 @NonNullByDefault
-@Component(configurationPid = "binding.luxtronikheatpump", service = ThingHandlerFactory.class)
-public class LuxtronikHeatpumpHandlerFactory extends BaseThingHandlerFactory {
+@Component(configurationPid = "binding.luxtroniklegacy", service = ThingHandlerFactory.class)
+public class LuxtronikLegacyHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_HEATPUMP);
     private final LuxtronikTranslationProvider translationProvider;
 
     @Activate
-    public LuxtronikHeatpumpHandlerFactory(final @Reference LocaleProvider localeProvider,
+    public LuxtronikLegacyHandlerFactory(final @Reference LocaleProvider localeProvider,
             final @Reference TranslationProvider i18nProvider, ComponentContext componentContext) {
         super.activate(componentContext);
         this.translationProvider = new LuxtronikTranslationProvider(getBundleContext().getBundle(), i18nProvider,
@@ -61,7 +61,7 @@ public class LuxtronikHeatpumpHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_HEATPUMP.equals(thingTypeUID)) {
-            return new LuxtronikHeatpumpHandler(thing, translationProvider);
+            return new LuxtronikLegacyHandler(thing, translationProvider);
         }
 
         return null;

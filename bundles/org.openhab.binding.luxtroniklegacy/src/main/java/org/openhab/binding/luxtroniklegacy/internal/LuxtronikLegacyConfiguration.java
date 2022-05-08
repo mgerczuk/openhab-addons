@@ -10,17 +10,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal;
+package org.openhab.binding.luxtroniklegacy.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link LuxtronikHeatpumpConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link LuxtronikLegacyConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Stefan Giehl - Initial contribution
  */
 @NonNullByDefault
-public class LuxtronikHeatpumpConfiguration {
+public class LuxtronikLegacyConfiguration {
 
     public String ipAddress = "";
     public int port = 8889;

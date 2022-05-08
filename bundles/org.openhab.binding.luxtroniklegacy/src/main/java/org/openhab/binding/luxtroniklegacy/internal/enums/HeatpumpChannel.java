@@ -10,13 +10,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal.enums;
+package org.openhab.binding.luxtroniklegacy.internal.enums;
 
 import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.luxtronikheatpump.internal.exceptions.InvalidChannelException;
+import org.openhab.binding.luxtroniklegacy.internal.exceptions.InvalidChannelException;
 import org.openhab.core.items.Item;
 import org.openhab.core.library.items.DateTimeItem;
 import org.openhab.core.library.items.NumberItem;
@@ -1389,7 +1389,7 @@ public enum HeatpumpChannel {
             }
         }
 
-        throw new InvalidChannelException("cannot find LuxtronikHeatpump channel for '" + heatpumpCommand + "'");
+        throw new InvalidChannelException("cannot find LuxtronikLegacy channel for '" + heatpumpCommand + "'");
     }
 
     @Override

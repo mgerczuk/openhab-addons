@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal;
+package org.openhab.binding.luxtroniklegacy.internal;
 
 import java.io.IOException;
 import java.time.DateTimeException;
@@ -21,8 +21,8 @@ import javax.measure.Unit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.luxtronikheatpump.internal.enums.HeatpumpChannel;
-import org.openhab.binding.luxtronikheatpump.internal.enums.HeatpumpType;
+import org.openhab.binding.luxtroniklegacy.internal.enums.HeatpumpChannel;
+import org.openhab.binding.luxtroniklegacy.internal.enums.HeatpumpType;
 import org.openhab.core.items.Item;
 import org.openhab.core.library.items.DateTimeItem;
 import org.openhab.core.library.items.NumberItem;
@@ -49,16 +49,16 @@ import org.slf4j.LoggerFactory;
 public class ChannelUpdaterJob implements SchedulerRunnable, Runnable {
 
     private final Thing thing;
-    private final LuxtronikHeatpumpConfiguration config;
+    private final LuxtronikLegacyConfiguration config;
     private final LuxtronikTranslationProvider translationProvider;
     private final Logger logger = LoggerFactory.getLogger(ChannelUpdaterJob.class);
-    private final LuxtronikHeatpumpHandler handler;
+    private final LuxtronikLegacyHandler handler;
 
-    public ChannelUpdaterJob(LuxtronikHeatpumpHandler handler, LuxtronikTranslationProvider translationProvider) {
+    public ChannelUpdaterJob(LuxtronikLegacyHandler handler, LuxtronikTranslationProvider translationProvider) {
         this.translationProvider = translationProvider;
         this.handler = handler;
         this.thing = handler.getThing();
-        this.config = this.thing.getConfiguration().as(LuxtronikHeatpumpConfiguration.class);
+        this.config = this.thing.getConfiguration().as(LuxtronikLegacyConfiguration.class);
     }
 
     public Thing getThing() {
@@ -247,7 +247,7 @@ public class ChannelUpdaterJob implements SchedulerRunnable, Runnable {
         }
 
         String translation = translationProvider
-                .getText("channel-type.luxtronikheatpump." + name + ".state.option." + option);
+                .getText("channel-type.luxtroniklegacy." + name + ".state.option." + option);
         return translation == null ? "" : translation;
     }
 

@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal.enums;
+package org.openhab.binding.luxtroniklegacy.internal.enums;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 

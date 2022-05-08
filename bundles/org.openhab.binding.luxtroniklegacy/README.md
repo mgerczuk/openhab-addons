@@ -1,6 +1,6 @@
-# LuxtronikHeatpump Binding
+# LuxtronikLegacy Binding
 
-This binding gives the possibility to integrate any Heatpump that is based on the Luxtronik 2 contol unit of Alpha Innotec. This includes heatpumps of:
+This binding gives the possibility to integrate any Heatpump that is based on the Luxtronik contol unit of Alpha Innotec. This includes heatpumps of:
 
 * Alpha InnoTec
 * Buderus (Logamatic HMC20, HMC20 Z)
@@ -278,7 +278,7 @@ Below you can find some example textual configuration for a heatpump with some b
 _heatpump.things:_
 
 ```
-Thing luxtronikheatpump:heatpump:heatpump "Heatpump" [
+Thing luxtroniklegacy:heatpump:heatpump "Heatpump" [
     ipAddress="192.168.178.12",
     port="8889",
     refresh="300"
@@ -290,19 +290,19 @@ _heatpump.items:_
 ```
 Group    gHeatpump   "Heatpump"   <temperature>
 
-Number:Temperature HeatPump_Temp_Outside   "Temperature outside [%.1f °C]"   <temperature> (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:temperatureOutside" }
-Number:Temperature HeatPump_Temp_Outside_Avg     "Avg. temperature outside [%.1f °C]"  <temperature> (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:temperatureOutsideMean" }
+Number:Temperature HeatPump_Temp_Outside   "Temperature outside [%.1f °C]"   <temperature> (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:temperatureOutside" }
+Number:Temperature HeatPump_Temp_Outside_Avg     "Avg. temperature outside [%.1f °C]"  <temperature> (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:temperatureOutsideMean" }
 
-Number:Time HeatPump_Hours_Heatpump  "Operating hours [%d h]"  <clock> (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:runtimeTotalHeatPump" }
-Number:Time HeatPump_Hours_Heating   "Operating hours heating [%d h]"  <clock> (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:runtimeTotalHeating" }
-Number:Time HeatPump_Hours_Warmwater "Operating hours hot water [%d h]" <clock> (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:runtimeTotalHotWater" }
+Number:Time HeatPump_Hours_Heatpump  "Operating hours [%d h]"  <clock> (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:runtimeTotalHeatPump" }
+Number:Time HeatPump_Hours_Heating   "Operating hours heating [%d h]"  <clock> (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:runtimeTotalHeating" }
+Number:Time HeatPump_Hours_Warmwater "Operating hours hot water [%d h]" <clock> (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:runtimeTotalHotWater" }
 
-String HeatPump_State_Ext   "State [%s]"   (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:menuStateFull" }
+String HeatPump_State_Ext   "State [%s]"   (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:menuStateFull" }
 
-Number HeatPump_heating_operation_mode   "Heating operation mode [%s]"  (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:heatingMode" }
-Number HeatPump_heating_temperature   "Heating temperature [%.1f]"  (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:temperatureHeatingParallelShift" }
-Number HeatPump_warmwater_operation_mode   "Hot water operation mode [%s]"  (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:hotWaterMode" }
-Number HeatPump_warmwater_temperature   "Hot water temperature [%.1f]"  (gHeatpump) { channel="luxtronikheatpump:heatpump:heatpump:temperatureHotWaterTarget" }
+Number HeatPump_heating_operation_mode   "Heating operation mode [%s]"  (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:heatingMode" }
+Number HeatPump_heating_temperature   "Heating temperature [%.1f]"  (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:temperatureHeatingParallelShift" }
+Number HeatPump_warmwater_operation_mode   "Hot water operation mode [%s]"  (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:hotWaterMode" }
+Number HeatPump_warmwater_temperature   "Hot water temperature [%.1f]"  (gHeatpump) { channel="luxtroniklegacy:heatpump:heatpump:temperatureHotWaterTarget" }
 ```
 
 _heatpump.sitemap:_

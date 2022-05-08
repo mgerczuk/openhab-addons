@@ -10,10 +10,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.luxtronikheatpump.internal.enums;
+package org.openhab.binding.luxtroniklegacy.internal.enums;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.luxtronikheatpump.internal.exceptions.InvalidOperationModeException;
+import org.openhab.binding.luxtroniklegacy.internal.exceptions.InvalidOperationModeException;
 
 /**
  * Represents all heat pump cooling operation modes
