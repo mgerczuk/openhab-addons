@@ -212,7 +212,7 @@ public class ChannelUpdaterJob implements SchedulerRunnable, Runnable {
                 heatpumpParams, heatpumpVisibilities);
         String state = "";
 
-        if (row1 != null && row1 == 3) {
+        if (row1 != null && row1 == 4) {
             // 3 means error state
             state = getStateTranslation("errorCodeX", error);
         } else {
