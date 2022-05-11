@@ -67,8 +67,21 @@ public class Bluetooth extends AbstractPhysicalLayer {
         this.destAddress = new SmaBluetoothAddress(destAdr, port);
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+
+        if (connection != null) {
+            logger.error("Bluetooth::finalize(): resource leak!");
+        }
+    }
+
     public SmaBluetoothAddress getHeaderAddress() {
         return new SmaBluetoothAddress(commBuf, 4);
+    }
+
+    public boolean isOpen() {
+        return (connection != null);
     }
 
     @Override

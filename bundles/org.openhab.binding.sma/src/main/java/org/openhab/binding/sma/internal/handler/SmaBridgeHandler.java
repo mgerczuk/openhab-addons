@@ -186,9 +186,13 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             }
             updateStatus(ThingStatus.ONLINE);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
 
             logger.error("run() failed: {}", e.getMessage());
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+        } catch (Exception e) {
+
+            logger.error("run() unexpected exception", e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } finally {
 

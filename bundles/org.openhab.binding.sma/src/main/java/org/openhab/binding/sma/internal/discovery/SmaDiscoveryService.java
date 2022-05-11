@@ -44,23 +44,7 @@ public class SmaDiscoveryService extends AbstractDiscoveryService {
 
     @Override
     protected void startScan() {
-        logger.info("startScan()");
-
-        // scheduler.schedule(new Runnable() {
-        // @Override
-        // public void run() {
-        // try {
-        // notifyDiscovery(99);
-        // notifyDiscovery(113);
-        // } catch (Exception e) {
-        // logger.error("Error scanning for devices", e);
-        //
-        // if (scanListener != null) {
-        // scanListener.onErrorOccurred(e);
-        // }
-        // }
-        // }
-        // }, 0, TimeUnit.SECONDS);
+        // discovery is done in SmaBridgeHandler
     }
 
     public void notifyDiscovery(int susyId, String label) {

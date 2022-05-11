@@ -71,6 +71,11 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     }
 
     public void init(Bluetooth layer) throws IOException {
+
+        if (this.layer != null && this.layer.isOpen()) {
+            logger.error("Bluetooth already open! Resource leak!");
+        }
+
         this.layer = layer;
 
         if (isInit) {
