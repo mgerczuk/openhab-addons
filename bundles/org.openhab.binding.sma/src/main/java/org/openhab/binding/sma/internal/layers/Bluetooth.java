@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -137,8 +140,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
         writeShort(dstSUSyID);
         write(dstSerial);
         writeShort(ctrl2);
-        writeShort(AppSUSyID);
-        write(AppSerial);
+        writeShort(SMANetFrame.AppSUSyID);
+        write(SMANetFrame.AppSerial);
         writeShort(ctrl2);
         writeShort((short) 0);
         writeShort((short) 0);
@@ -150,6 +153,16 @@ public class Bluetooth extends AbstractPhysicalLayer {
         buffer[packetposition++] = (byte) (FCSChecksum & 0x00FF);
         buffer[packetposition++] = (byte) (((FCSChecksum & 0xFF00) >>> 8) & 0x00FF);
         buffer[packetposition++] = HDLC_SYNC; // Trailing byte
+    }
+
+    public void writeFrame(PPPFrame frame) throws IOException {
+        ByteArrayOutputStream temp = new ByteArrayOutputStream();
+        frame.write(temp);
+        byte[] buf = temp.toByteArray();
+
+        for (byte b : buf) {
+            buffer[packetposition++] = b;
+        }
     }
 
     public void writePacketHeader(int control) {
@@ -186,7 +199,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     public void send() throws IOException {
         writePacketLength();
-        logger.debug("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
+        logger.info("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
         out.write(buffer, 0, packetposition);
     }
 
@@ -212,6 +225,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
         int command = 0;
         int bib = 0;
         final byte[] data = new byte[1024];
+        byte[] dummy = new byte[0];
 
         do {
             commBuf = new byte[1024];
@@ -247,6 +261,11 @@ public class Bluetooth extends AbstractPhysicalLayer {
                     }
 
                     if (hasL2pckt == 1) {
+
+                        ByteArrayInputStream is = new ByteArrayInputStream(commBuf, 18, pkLength - 18);
+                        PPPFrame frame = PPPFrame.read(is);
+                        dummy = frame.getFrame();
+
                         // Copy CommBuf to packetbuffer
                         boolean escNext = false;
 
@@ -300,6 +319,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
         logger.debug("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
                 bytesToHex(data, bib));
+
+        boolean x = Arrays.equals(Arrays.copyOfRange(data, 0, bib), dummy);
 
         return data;
     }

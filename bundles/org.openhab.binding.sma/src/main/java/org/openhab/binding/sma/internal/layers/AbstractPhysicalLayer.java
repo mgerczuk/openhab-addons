@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
-import java.util.Random;
-
 /**
  * @author Martin Gerczuk - Initial contribution
  */
@@ -135,16 +133,6 @@ public abstract class AbstractPhysicalLayer {
 
     protected byte[] buffer = new byte[520];
     protected int packetposition = 0;
-
-    // Generate a Serial Number for application
-    protected short AppSUSyID = 125;
-    protected int AppSerial;
-
-    public AbstractPhysicalLayer() {
-        super();
-        Random randomGenerator = new Random();
-        AppSerial = 900000000 + randomGenerator.nextInt(100000000);
-    }
 
     public void write(int v) {
         writeByte((byte) ((v >>> 0) & 0xFF));

@@ -25,7 +25,7 @@ public class BluetoothDebug extends Bluetooth {
 
     public BluetoothDebug() {
         super("00802515B606");
-        AppSerial = 934043669;
+        SMANetFrame.AppSerial = 934043669;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class BluetoothDebug extends Bluetooth {
     @Override
     public void send() throws IOException {
         writePacketLength();
-        logger.debug("\n{}\n{} Bytes sent", bytesToHex(buffer, packetposition, ' '), packetposition);
+        logger.info("\n{}\n{} Bytes sent", bytesToHex(buffer, packetposition, ' '), packetposition);
     }
 
     @Override
