@@ -12,9 +12,9 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -34,6 +34,10 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     private static final long READ_TIMEOUT_MILLIS = 15000;
 
+    private static final int HDLC_ESC = 0x7d;
+
+    private static final int HDLC_SYNC = 0x7e;
+
     // length of package header
     public static final int HEADERLENGTH = 18;
 
@@ -43,11 +47,11 @@ public class Bluetooth extends AbstractPhysicalLayer {
     public SmaBluetoothAddress localAddress = new SmaBluetoothAddress();
     public SmaBluetoothAddress destAddress;
 
-    protected short FCSChecksum = (short) 0xffff;
+    CRC crc = new CRC();
 
     protected static StreamConnection connection;
     protected static DataOutputStream out;
-    protected static DataInputStream in;
+    protected static InputStream in;
 
     private byte[] commBuf;
 
@@ -84,7 +88,6 @@ public class Bluetooth extends AbstractPhysicalLayer {
         return (connection != null);
     }
 
-    @Override
     public void open() throws IOException {
 
         close();
@@ -92,11 +95,10 @@ public class Bluetooth extends AbstractPhysicalLayer {
             connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
 
             out = connection.openDataOutputStream();
-            in = connection.openDataInputStream();
+            in = new TimeoutInputStream(connection.openDataInputStream(), READ_TIMEOUT_MILLIS);
         }
     }
 
-    @Override
     public void close() {
 
         if (connection != null) {
@@ -105,7 +107,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
                 in.close();
                 connection.close();
             } catch (IOException e) {
-                logger.debug("Error closing", e);
+                logger.error("Error closing Bluetooth socket", e);
             }
         }
 
@@ -117,24 +119,20 @@ public class Bluetooth extends AbstractPhysicalLayer {
     @Override
     public void writeByte(byte v) {
         // Keep a rolling checksum over the payload
-        FCSChecksum = (short) (((FCSChecksum & 0xff00) >>> 8) ^ fcstab[(FCSChecksum ^ v) & 0xff]);
+        crc.writeByte(v);
 
-        if (v == 0x7d || v == 0x7e || v == 0x11 || v == 0x12 || v == 0x13) {
-            buffer[packetposition++] = 0x7d;
+        if (v == HDLC_ESC || v == HDLC_SYNC || v == 0x11 || v == 0x12 || v == 0x13) {
+            buffer[packetposition++] = HDLC_ESC;
             buffer[packetposition++] = (byte) (v ^ 0x20);
         } else {
             buffer[packetposition++] = v;
         }
     }
 
-    @Override
-    public void writePacket(byte longwords, byte ctrl, short ctrl2, short dstSUSyID, int dstSerial, short pcktID) {
-        buffer[packetposition++] = 0x7E; // Not included in checksum
-        logger.debug("Checksum {}", AbstractPhysicalLayer.toHex(FCSChecksum));
+    public void writePppHeader(byte longwords, byte ctrl, short ctrl2, short dstSUSyID, int dstSerial, short pcktID) {
+        buffer[packetposition++] = HDLC_SYNC; // Not included in checksum
         write(L2SIGNATURE);
-        logger.debug("Checksum {}", AbstractPhysicalLayer.toHex(FCSChecksum));
         writeByte(longwords);
-        logger.debug("Checksum {}", AbstractPhysicalLayer.toHex(FCSChecksum));
         writeByte(ctrl);
         writeShort(dstSUSyID);
         write(dstSerial);
@@ -147,24 +145,22 @@ public class Bluetooth extends AbstractPhysicalLayer {
         writeShort((short) (pcktID | 0x8000));
     }
 
-    @Override
-    public void writePacketTrailer() {
-        FCSChecksum ^= 0xFFFF;
+    public void writePppTrailer() {
+        short FCSChecksum = crc.get();
         buffer[packetposition++] = (byte) (FCSChecksum & 0x00FF);
         buffer[packetposition++] = (byte) (((FCSChecksum & 0xFF00) >>> 8) & 0x00FF);
-        buffer[packetposition++] = 0x7E; // Trailing byte
+        buffer[packetposition++] = HDLC_SYNC; // Trailing byte
     }
 
-    @Override
     public void writePacketHeader(int control) {
         this.writePacketHeader(control, this.destAddress);
     }
 
     public void writePacketHeader(int control, SmaBluetoothAddress destaddress) {
         packetposition = 0;
-        FCSChecksum = (short) 0xFFFF;
+        crc.reset();
 
-        buffer[packetposition++] = 0x7E;
+        buffer[packetposition++] = HDLC_SYNC;
         buffer[packetposition++] = 0; // placeholder for len1
         buffer[packetposition++] = 0; // placeholder for len2
         buffer[packetposition++] = 0; // placeholder for checksum
@@ -182,21 +178,18 @@ public class Bluetooth extends AbstractPhysicalLayer {
         buffer[packetposition++] = (byte) (control >>> 8);
     }
 
-    @Override
     public void writePacketLength() {
         buffer[1] = (byte) (packetposition & 0xFF); // Lo-Byte
         buffer[2] = (byte) ((packetposition >>> 8) & 0xFF); // Hi-Byte
         buffer[3] = (byte) (buffer[0] ^ buffer[1] ^ buffer[2]); // checksum
     }
 
-    @Override
     public void send() throws IOException {
         writePacketLength();
         logger.debug("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
         out.write(buffer, 0, packetposition);
     }
 
-    @Override
     public byte[] receive(int wait4Command) throws IOException {
         return receive(destAddress, wait4Command);
     }
@@ -247,7 +240,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
                     logger.debug("receiving cmd {}", command);
 
-                    if ((hasL2pckt == 0) && commBuf[18] == (byte) 0x7E && commBuf[19] == (byte) 0xff
+                    if ((hasL2pckt == 0) && commBuf[18] == (byte) HDLC_SYNC && commBuf[19] == (byte) 0xff
                             && commBuf[20] == (byte) 0x03 && commBuf[21] == (byte) 0x60 && commBuf[22] == (byte) 0x65) // 0x656003FF7E
                     {
                         hasL2pckt = 1;
@@ -261,14 +254,14 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
                         for (int i = HEADERLENGTH; i < pkLength; i++) {
                             data[index] = commBuf[i];
-                            // Keep 1st byte raw unescaped 0x7E
+                            // Keep 1st byte raw unescaped HDLC_SYNC
                             if (escNext == true) {
                                 data[index] ^= 0x20;
                                 escNext = false;
                                 index++;
                             } else {
-                                if (data[index] == 0x7D) {
-                                    escNext = true; // Throw away the 0x7d byte
+                                if (data[index] == HDLC_ESC) {
+                                    escNext = true; // Throw away the HDLC_ESC byte
                                 } else {
                                     index++;
                                 }
@@ -315,64 +308,11 @@ public class Bluetooth extends AbstractPhysicalLayer {
     public boolean isCrcValid() {
         byte lb = buffer[packetposition - 3], hb = buffer[packetposition - 2];
 
-        return !((lb == 0x7E) || (hb == 0x7E) || (lb == 0x7D) || (hb == 0x7D));
-    }
-
-    public boolean isValidChecksum() {
-        FCSChecksum = (short) 0xffff;
-        // Skip over 0x7e at start and end of packet
-        int i;
-        for (i = 1; i <= packetposition - 4; i++) {
-            FCSChecksum = (short) ((FCSChecksum >> 8) ^ fcstab[(FCSChecksum ^ buffer[i]) & 0xff]);
-        }
-
-        FCSChecksum ^= 0xffff;
-
-        if ((short) getShort(buffer, packetposition - 3) == FCSChecksum) {
-            return true;
-        } else {
-            logger.debug("Invalid chk {} - Found 0x{}{}", toHex(FCSChecksum), toHex(buffer[2]), toHex(buffer[3]));
-            return false;
-        }
-    }
-
-    private final class ReadRunnable implements Runnable {
-        private final byte[] buf;
-        private final int offset;
-        private final int bufsize;
-        private int result = -1;
-
-        private ReadRunnable(byte[] buf, int offset, int bufsize) {
-            this.buf = buf;
-            this.offset = offset;
-            this.bufsize = bufsize;
-        }
-
-        @Override
-        public void run() {
-            try {
-                result = in.read(buf, offset, bufsize);
-            } catch (Exception e) {
-            }
-        }
+        return !((lb == HDLC_SYNC) || (hb == HDLC_SYNC) || (lb == HDLC_ESC) || (hb == HDLC_ESC));
     }
 
     protected int read(byte[] b, int off, int len) throws IOException {
-        try {
-            ReadRunnable runnable = new ReadRunnable(b, off, len);
-            Thread t = new Thread(runnable);
-            t.start();
-            t.join(READ_TIMEOUT_MILLIS);
-            if (t.isAlive()) {
-                t.interrupt();
-                logger.debug("Timeout reading socket");
-                throw new IOException("Timeout reading socket");
-            }
-
-            return runnable.result;
-        } catch (InterruptedException e) {
-            throw new IOException(e);
-        }
+        return in.read(b, off, len);
     }
 
     public int currentTimeSeconds() {

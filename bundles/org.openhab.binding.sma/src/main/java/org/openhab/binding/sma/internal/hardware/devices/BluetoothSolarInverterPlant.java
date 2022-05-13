@@ -23,7 +23,6 @@ import java.util.Map;
 import org.openhab.binding.sma.internal.SmaBinding.Device;
 import org.openhab.binding.sma.internal.layers.AbstractPhysicalLayer;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
-import org.openhab.binding.sma.internal.layers.PhysicalLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     private SmaBluetoothAddress rootDeviceAdress;
 
     private ArrayList<BluetoothSolarInverterPlant.Data> inverters;
-    protected Map<String, BluetoothSolarInverter.Data> invertersByAddress;
-    protected Map<SmaSerial, BluetoothSolarInverter.Data> invertersBySerial;
+    protected Map<String, BluetoothSolarInverterPlant.Data> invertersByAddress;
+    protected Map<SmaSerial, BluetoothSolarInverterPlant.Data> invertersBySerial;
 
     protected Bluetooth layer;
 
@@ -54,20 +53,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
     public BluetoothSolarInverterPlant(Device device) {
         super(device);
-    }
-
-    /*
-     * public BluetoothSolarInverterPlant(String address) { super(address);
-     *
-     * this.layer = new Bluetooth(address); }
-     *
-     * public BluetoothSolarInverterPlant(SmaBluetoothAddress address) {
-     * super(); rootAddress = address.getAddress(); this.layer = new
-     * Bluetooth(address); }
-     */
-    @Override
-    public void init() throws IOException {
-        init(new Bluetooth(device.getPlant()));
     }
 
     public void init(Bluetooth layer) throws IOException {
@@ -272,11 +257,11 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
             // prepare some caching
-            this.invertersByAddress = new HashMap<String, BluetoothSolarInverter.Data>(inverters.size());
-            this.invertersBySerial = new HashMap<SmaSerial, BluetoothSolarInverter.Data>(inverters.size());
+            this.invertersByAddress = new HashMap<String, BluetoothSolarInverterPlant.Data>(inverters.size());
+            this.invertersBySerial = new HashMap<SmaSerial, BluetoothSolarInverterPlant.Data>(inverters.size());
 
             for (BluetoothSolarInverterPlant.Data inverter : inverters) {
-                BluetoothSolarInverter.Data bTInverter = inverter;
+                BluetoothSolarInverterPlant.Data bTInverter = inverter;
                 this.invertersByAddress.put(bTInverter.getBTAddressAsString(), bTInverter);
             }
 
@@ -284,12 +269,12 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             do {
                 pcktID++;
                 layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePacket((byte) 0x09, (byte) 0xA0, (short) 0x0, PhysicalLayer.ANYSUSYID,
-                        PhysicalLayer.ANYSERIAL, pcktID);
+                layer.writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, AbstractPhysicalLayer.ANYSUSYID,
+                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
                 layer.write(0x00000200);
                 layer.write(0x0);
                 layer.write(0x0);
-                layer.writePacketTrailer();
+                layer.writePppTrailer();
                 layer.writePacketLength();
             } while (!layer.isCrcValid());
 
@@ -302,7 +287,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 data = layer.receiveAll(0x01);
                 address = layer.getHeaderAddress();
 
-                BluetoothSolarInverter.Data current = this.invertersByAddress.get(address.toString());
+                BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
                 if (current != null) {
                     SmaSerial serial = new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 55),
                             AbstractPhysicalLayer.getInt(data, 57));
@@ -361,15 +346,15 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 now = layer.currentTimeSeconds();
 
                 layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePacket((byte) 0x0E, (byte) 0xA0, (short) 0x0100, PhysicalLayer.ANYSUSYID,
-                        PhysicalLayer.ANYSERIAL, pcktID);
+                layer.writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, AbstractPhysicalLayer.ANYSUSYID,
+                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
                 layer.write(0xFFFD040C);
                 layer.write(userGroup.getValue()); // User / Installer
                 layer.write(0x00000384); // Timeout = 900sec ?
                 layer.write(now);
                 layer.write(0x0);
                 layer.write(pw, pw.length);
-                layer.writePacketTrailer();
+                layer.writePppTrailer();
                 layer.writePacketLength();
             } while (!layer.isCrcValid());
 
@@ -411,11 +396,11 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             do {
                 pcktID++;
                 layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePacket((byte) 0x08, (byte) 0xA0, (short) 0x0300, PhysicalLayer.ANYSUSYID,
-                        PhysicalLayer.ANYSERIAL, pcktID);
+                layer.writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, AbstractPhysicalLayer.ANYSUSYID,
+                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
                 layer.write(0xFFFD010E);
                 layer.write(0xFFFFFFFF);
-                layer.writePacketTrailer();
+                layer.writePppTrailer();
                 layer.writePacketLength();
             } while (!layer.isCrcValid());
             layer.send();
@@ -437,8 +422,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             do {
                 pcktID++;
                 layer.writePacketHeader(0x01, rootDeviceAdress);
-                layer.writePacket((byte) 0x10, (byte) 0xA0, (short) 0, PhysicalLayer.ANYSUSYID, PhysicalLayer.ANYSERIAL,
-                        pcktID);
+                layer.writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, AbstractPhysicalLayer.ANYSUSYID,
+                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
                 layer.write(0xF000020A);
                 layer.write(0x00236D00);
                 layer.write(0x00236D00);
@@ -449,7 +434,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 layer.write(tzOffset);
                 layer.write(1);
                 layer.write(1);
-                layer.writePacketTrailer();
+                layer.writePppTrailer();
                 layer.writePacketLength();
             } while (!layer.isCrcValid());
 
@@ -493,12 +478,12 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             do {
                 pcktID++;
                 layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePacket((byte) 0x09, (byte) 0xA0, (short) 0, PhysicalLayer.ANYSUSYID, PhysicalLayer.ANYSERIAL,
-                        pcktID);
+                layer.writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, AbstractPhysicalLayer.ANYSUSYID,
+                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
                 layer.write(command);
                 layer.write(first);
                 layer.write(last);
-                layer.writePacketTrailer();
+                layer.writePppTrailer();
                 layer.writePacketLength();
             } while (!layer.isCrcValid());
 
@@ -520,7 +505,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
                             SmaSerial serial = new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 15),
                                     AbstractPhysicalLayer.getInt(data, 17));
-                            BluetoothSolarInverter.Data current = invertersBySerial.get(serial);
+                            BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
                             if (current != null) {
                                 validPcktID = true;
@@ -982,11 +967,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     @Override
     public String toString() {
         return "BluetoothSolarInverterPlant [rootAddress=" + rootDeviceAdress + ", data=" + data + "]";
-    }
-
-    @Override
-    public List<LRIDefinition> getValidLRIDefinitions() {
-        return BluetoothSolarInverterPlant.validLRIDefinition;
     }
 
     public static class Data extends SolarInverter.Data {

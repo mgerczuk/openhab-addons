@@ -14,7 +14,6 @@ package org.openhab.binding.sma.internal.hardware.devices;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * @author Martin Gerczuk - Initial contribution
@@ -454,19 +453,9 @@ public interface SmaDevice {
         }
     }
 
-    void init() throws IOException;
-
     void exit();
 
     public void logon(SmaUserGroup userGroup, String password) throws IOException;
 
     public void logoff() throws IOException;
-
-    // void setEventPublisher(EventPublisher eventPublisher);
-    //
-    // void unsetEventPublisher(EventPublisher eventPublisher);
-
-    List<LRIDefinition> getValidLRIDefinitions();
-
-    String getValueAsString(LRIDefinition lriDefinition);
 }

@@ -12,7 +12,6 @@
  */
 package org.openhab.binding.sma.internal.hardware.devices;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -28,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Martin Gerczuk - Initial contribution
  */
-public abstract class SolarInverter extends AbstractSmaDevice {
+public abstract class SolarInverter implements SmaDevice {
     private static final Logger logger = LoggerFactory.getLogger(SolarInverter.class);
 
     protected Device device;
@@ -49,32 +48,6 @@ public abstract class SolarInverter extends AbstractSmaDevice {
 
     public void setSerial(SmaSerial serial) {
         this.data.serial = serial;
-    }
-
-    @Override
-    public String getValueAsString(LRIDefinition element) {
-        InverterDataType data = element.getData();
-        /*
-         * if (!this.hasValidValues(data)) {
-         * this.getInverterData(data);
-         * }
-         *
-         * if ((flags & InverterDataType.EnergyProduction.getValue()) == 0)
-         * this.getInverterData(InverterDataType.EnergyProduction);
-         */
-
-        try {
-
-            this.logon(device.isLoginAsInstaller() ? SmaUserGroup.Installer : SmaUserGroup.User, device.getPassword());
-            this.getInverterData(element.getData());
-            this.logoff();
-
-        } catch (IOException e) {
-            logger.error("Login failed!", e);
-        }
-
-        // TODO Auto-generated method stub
-        return "";
     }
 
     private boolean hasValidValues(InverterDataType data) {

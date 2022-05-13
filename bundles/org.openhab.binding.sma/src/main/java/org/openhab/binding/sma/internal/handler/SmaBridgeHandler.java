@@ -130,7 +130,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         }
 
         SmaBinding binding = new SmaBinding();
-        BluetoothSolarInverterPlant inverter = new BluetoothSolarInverterPlant(
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
                 binding.createDevice(config.btAddress, config.userPassword));
 
         logger.debug("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
@@ -142,11 +142,11 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         }
 
         try {
-            getData(config, inverter);
+            getData(config, plant);
 
             logger.debug("*******************");
 
-            ArrayList<BluetoothSolarInverterPlant.Data> inverters = inverter.getInverters();
+            ArrayList<BluetoothSolarInverterPlant.Data> inverters = plant.getInverters();
             logger.debug("{} inverters found:", inverters.size());
             // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
             boolean complete = true;
@@ -196,7 +196,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } finally {
 
-            inverter.exit();
+            plant.exit();
             logger.debug("run() finished.");
         }
     }
