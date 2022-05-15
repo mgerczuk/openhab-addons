@@ -13,7 +13,6 @@
 package org.openhab.binding.sma.internal.layers;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -21,7 +20,7 @@ import java.io.IOException;
 /**
  * @author Martin Gerczuk - Initial contribution
  */
-public class LittleEndianByteArrayOutputStream extends FilterOutputStream implements DataOutput {
+public class LittleEndianByteArrayOutputStream extends FilterOutputStream {
 
     ByteArrayOutputStream os;
 
@@ -29,77 +28,77 @@ public class LittleEndianByteArrayOutputStream extends FilterOutputStream implem
         this(new ByteArrayOutputStream());
     }
 
-    public LittleEndianByteArrayOutputStream(ByteArrayOutputStream os) {
+    private LittleEndianByteArrayOutputStream(ByteArrayOutputStream os) {
         super(new DataOutputStream(os));
         this.os = os;
     }
 
-    public byte[] toByteArray() {
+    public byte[] toByteArray() throws IOException {
+        close();
         return os.toByteArray();
     }
 
-    public PPPFrame getFrame() {
-        return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, SMANetFrame.CONTROL, SMANetFrame.PROTOCOL, os.toByteArray());
+    public PPPFrame toPPPFrame() {
+        return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL, os.toByteArray());
     }
 
-    @Override
-    public void writeBoolean(boolean v) throws IOException {
+    public LittleEndianByteArrayOutputStream writeBoolean(boolean v) throws IOException {
         ((DataOutputStream) out).writeBoolean(v);
+        return this;
     }
 
-    @Override
-    public void writeByte(int v) throws IOException {
+    public LittleEndianByteArrayOutputStream writeByte(int v) throws IOException {
         ((DataOutputStream) out).writeByte(v);
+        return this;
     }
 
-    @Override
-    public void writeShort(int v) throws IOException {
+    public LittleEndianByteArrayOutputStream writeShort(int v) throws IOException {
         out.write(0xFF & v);
         out.write(0xFF & (v >> 8));
+        return this;
     }
 
-    @Override
-    public void writeChar(int v) throws IOException {
+    public LittleEndianByteArrayOutputStream writeChar(int v) throws IOException {
         writeShort(v);
+        return this;
     }
 
-    @Override
-    public void writeInt(int v) throws IOException {
+    public LittleEndianByteArrayOutputStream writeInt(int v) throws IOException {
         out.write(0xFF & v);
         out.write(0xFF & (v >> 8));
         out.write(0xFF & (v >> 16));
         out.write(0xFF & (v >> 24));
+        return this;
     }
 
-    @Override
-    public void writeLong(long v) throws IOException {
-        throw new IOException("LittleEndianDataOutputStream.writeLong not supported");
-    }
+    // public LittleEndianByteArrayOutputStream writeLong(long v) throws IOException {
+    // throw new IOException("LittleEndianDataOutputStream.writeLong not supported");
+    // }
+    //
+    // public LittleEndianByteArrayOutputStream writeFloat(float v) throws IOException {
+    // writeInt(Float.floatToIntBits(v));
+    // return this;
+    // }
+    //
+    // public LittleEndianByteArrayOutputStream writeDouble(double v) throws IOException {
+    // writeLong(Double.doubleToLongBits(v));
+    // return this;
+    // }
 
-    @Override
-    public void writeFloat(float v) throws IOException {
-        writeInt(Float.floatToIntBits(v));
-    }
-
-    @Override
-    public void writeDouble(double v) throws IOException {
-        writeLong(Double.doubleToLongBits(v));
-    }
-
-    @Override
-    public void writeBytes(String s) throws IOException {
+    public LittleEndianByteArrayOutputStream writeBytes(String s) throws IOException {
         ((DataOutputStream) out).writeBytes(s);
+        return this;
     }
 
-    @Override
-    public void writeChars(String s) throws IOException {
-        for (int i = 0; i < s.length(); i++) {
-            writeChar(s.charAt(i));
-        }
-    }
-
-    @Override
-    public void writeUTF(String s) throws IOException {
-        ((DataOutputStream) out).writeUTF(s);
-    }
+    // public LittleEndianByteArrayOutputStream writeChars(String s) throws IOException {
+    // for (int i = 0; i < s.length(); i++) {
+    // writeChar(s.charAt(i));
+    // }
+    // return this;
+    // }
+    //
+    // public LittleEndianByteArrayOutputStream writeUTF(String s) throws IOException {
+    // ((DataOutputStream) out).writeUTF(s);
+    // return this;
+    // }
 }

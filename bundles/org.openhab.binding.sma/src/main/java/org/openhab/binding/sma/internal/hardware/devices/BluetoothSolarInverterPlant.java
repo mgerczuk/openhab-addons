@@ -13,7 +13,6 @@
 package org.openhab.binding.sma.internal.hardware.devices;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -25,7 +24,8 @@ import org.openhab.binding.sma.internal.SmaBinding.Device;
 import org.openhab.binding.sma.internal.layers.AbstractPhysicalLayer;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.layers.LittleEndianByteArrayOutputStream;
-import org.openhab.binding.sma.internal.layers.SMANetFrame;
+import org.openhab.binding.sma.internal.layers.SMAFrame;
+import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,13 +93,11 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
         try {
             // query SMA Net ID
-            layer.writePacketHeader(0x0201, new SmaBluetoothAddress(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }));
-            layer.writeByte((byte) 'v');
-            layer.writeByte((byte) 'e');
-            layer.writeByte((byte) 'r');
-            layer.writeByte((byte) 13); // CR
-            layer.writeByte((byte) 10); // LF
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x0201, layer.localAddress,
+                    new SmaBluetoothAddress(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }), //
+                    new LittleEndianByteArrayOutputStream()//
+                            .writeBytes("ver\r\n")//
+                            .toByteArray()));
 
             // This can take up to 3 seconds!
             data = layer.receive(0x02);
@@ -107,12 +105,13 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             logger.debug("SMA netID = {}\n", netID);
 
             // check root device Address
-            layer.writePacketHeader(0x02);
-            layer.write(0x00700400);
-            layer.writeByte((byte) netID);
-            layer.write(0);
-            layer.write(1);
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x02, layer.localAddress, layer.destAddress, //
+                    new LittleEndianByteArrayOutputStream()//
+                            .writeInt(0x00700400)//
+                            .writeByte((byte) netID)//
+                            .writeInt(0)//
+                            .writeInt(1)//
+                            .toByteArray()));
 
             // Connection to Root Device
             data = layer.receive(0x0A);
@@ -269,24 +268,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
             // Send broadcast request for identification
-            ByteBuffer st;
-
-            do {
-                pcktID++;
-                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-
-                LittleEndianByteArrayOutputStream b = SMANetFrame.writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0,
-                        AbstractPhysicalLayer.ANYSUSYID, AbstractPhysicalLayer.ANYSERIAL, pcktID);
-                b.writeInt(0x00000200);
-                b.writeInt(0x0);
-                b.writeInt(0x0);
-                b.close();
-                layer.writeFrame(b.getFrame());
-
-                layer.writePacketLength();
-            } while (!layer.isCrcValid());
-
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+                    SMAPPPFrame
+                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, AbstractPhysicalLayer.ANYSUSYID,
+                                    AbstractPhysicalLayer.ANYSERIAL, ++pcktID) //
+                            .writeInt(0x00000200)//
+                            .writeInt(0x0)//
+                            .writeInt(0x0)//
+                            .toPPPFrame()));
 
             // All inverters *should* reply with their SUSyID & SerialNr
             // (and some other unknown info)

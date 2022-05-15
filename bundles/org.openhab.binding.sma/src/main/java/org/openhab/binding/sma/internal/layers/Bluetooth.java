@@ -140,8 +140,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
         writeShort(dstSUSyID);
         write(dstSerial);
         writeShort(ctrl2);
-        writeShort(SMANetFrame.AppSUSyID);
-        write(SMANetFrame.AppSerial);
+        writeShort(SMAPPPFrame.AppSUSyID);
+        write(SMAPPPFrame.AppSerial);
         writeShort(ctrl2);
         writeShort((short) 0);
         writeShort((short) 0);
@@ -163,6 +163,16 @@ public class Bluetooth extends AbstractPhysicalLayer {
         for (byte b : buf) {
             buffer[packetposition++] = b;
         }
+    }
+
+    public void sendFrame(SMAFrame frame) throws IOException {
+
+        ByteArrayOutputStream temp = new ByteArrayOutputStream();
+        frame.write(temp);
+        byte[] buffer = temp.toByteArray();
+
+        logger.debug("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer));
+        out.write(buffer);
     }
 
     public void writePacketHeader(int control) {
@@ -199,7 +209,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     public void send() throws IOException {
         writePacketLength();
-        logger.info("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
+        logger.debug("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
         out.write(buffer, 0, packetposition);
     }
 

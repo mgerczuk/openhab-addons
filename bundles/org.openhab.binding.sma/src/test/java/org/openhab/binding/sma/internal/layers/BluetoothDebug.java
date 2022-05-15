@@ -12,7 +12,11 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +29,7 @@ public class BluetoothDebug extends Bluetooth {
 
     public BluetoothDebug() {
         super("00802515B606");
-        SMANetFrame.AppSerial = 934043669;
+        SMAPPPFrame.AppSerial = 934043669;
     }
 
     @Override
@@ -37,9 +41,22 @@ public class BluetoothDebug extends Bluetooth {
     }
 
     @Override
+    public void sendFrame(SMAFrame frame) throws IOException {
+
+        ByteArrayOutputStream temp = new ByteArrayOutputStream();
+        frame.write(temp);
+        byte[] buffer = temp.toByteArray();
+
+        logger.info("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer));
+        assertTrue(Arrays.equals(buffer, writes[writeInx++].data));
+    }
+
+    @Override
     public void send() throws IOException {
         writePacketLength();
         logger.info("\n{}\n{} Bytes sent", bytesToHex(buffer, packetposition, ' '), packetposition);
+
+        assertTrue(Arrays.equals(Arrays.copyOfRange(buffer, 0, packetposition), writes[writeInx++].data));
     }
 
     @Override
@@ -64,11 +81,22 @@ public class BluetoothDebug extends Bluetooth {
         }
     }
 
+    public static class WriteCall {
+        byte[] data;
+
+        public WriteCall(byte[] data) {
+            this.data = data;
+        }
+    }
+
     private static ReadCall[] calls;
     private static int callInx = 0;
+    private static WriteCall[] writes;
+    private static int writeInx = 0;
 
-    public static void setDebugData(ReadCall[] calls0) {
+    public static void setDebugData(ReadCall[] calls0, WriteCall[] writes0) {
         calls = calls0;
+        writes = writes0;
     }
 
     static int timeInx = 0;

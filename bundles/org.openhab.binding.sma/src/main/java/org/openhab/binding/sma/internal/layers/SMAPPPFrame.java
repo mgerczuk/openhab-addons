@@ -18,7 +18,7 @@ import java.util.Random;
 /**
  * @author Martin Gerczuk - Initial contribution
  */
-public class SMANetFrame {
+public class SMAPPPFrame {
 
     public static final byte CONTROL = 0x03;
     public static final short PROTOCOL = 0x6065;
