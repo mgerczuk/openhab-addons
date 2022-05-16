@@ -76,7 +76,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
         super.finalize();
 
         if (connection != null) {
-            logger.error("Bluetooth::finalize(): resource leak!");
+            logger.error("Bluetooth({}).finalize(): resource leak!", System.identityHashCode(this));
         }
     }
 
@@ -92,6 +92,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
         close();
         if (connection == null) {
+            logger.debug("Bluetooth({}).open()", System.identityHashCode(this));
+
             connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
 
             out = connection.openDataOutputStream();
@@ -103,6 +105,8 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
         if (connection != null) {
             try {
+                logger.debug("Bluetooth({}).close()", System.identityHashCode(this));
+
                 out.close();
                 in.close();
                 connection.close();
@@ -186,7 +190,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
     public void send() throws IOException {
         writePacketLength();
-        logger.debug("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
+        logger.trace("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
         out.write(buffer, 0, packetposition);
     }
 
@@ -203,7 +207,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
         SmaBluetoothAddress destinationAddr = new SmaBluetoothAddress();
         commBuf = null;
 
-        logger.debug("getPacket({})", wait4Command);
+        logger.trace("getPacket({})", wait4Command);
 
         int index = 0;
         int hasL2pckt = 0;
@@ -231,14 +235,14 @@ public class Bluetooth extends AbstractPhysicalLayer {
                 // data = new byte[pkLength - HEADERLENGTH];
                 bib += read(commBuf, HEADERLENGTH, pkLength - HEADERLENGTH);
 
-                logger.debug("data received: \n{}", bytesToHex(commBuf, pkLength));
+                logger.trace("data received: \n{}", bytesToHex(commBuf, pkLength));
                 // Check if data is coming from the right inverter
                 if (destAddress.equals(sourceAddr)) {
                     rc = 0;
-                    logger.debug("source: {}", sourceAddr.toString());
-                    logger.debug("destination: {}", destinationAddr.toString());
+                    logger.trace("source: {}", sourceAddr.toString());
+                    logger.trace("destination: {}", destinationAddr.toString());
 
-                    logger.debug("receiving cmd {}", command);
+                    logger.trace("receiving cmd {}", command);
 
                     if ((hasL2pckt == 0) && commBuf[18] == (byte) HDLC_SYNC && commBuf[19] == (byte) 0xff
                             && commBuf[20] == (byte) 0x03 && commBuf[21] == (byte) 0x60 && commBuf[22] == (byte) 0x65) // 0x656003FF7E
@@ -250,7 +254,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
                         // Copy CommBuf to packetbuffer
                         boolean escNext = false;
 
-                        logger.debug("PacketLength={}", pkLength);
+                        logger.trace("PacketLength={}", pkLength);
 
                         for (int i = HEADERLENGTH; i < pkLength; i++) {
                             data[index] = commBuf[i];
@@ -298,7 +302,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
             }
         } while (((command != wait4Command) || (rc == -1/* E_RETRY */)) && (0xFF != wait4Command));
 
-        logger.debug("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
+        logger.trace("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
                 bytesToHex(data, bib));
 
         return data;
