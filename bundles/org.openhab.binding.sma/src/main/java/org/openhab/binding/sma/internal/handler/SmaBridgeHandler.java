@@ -133,7 +133,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
                 binding.createDevice(config.btAddress, config.userPassword));
 
-        logger.debug("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
+        logger.trace("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
         ThingStatus thingStatus = ThingStatus.UNKNOWN;
 
         HashMap<Integer, SmaHandler> attachedThingsCopy;
@@ -144,7 +144,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         try {
             getData(config, plant);
 
-            logger.debug("*******************");
+            logger.trace("*******************");
 
             ArrayList<BluetoothSolarInverterPlant.Data> inverters = plant.getInverters();
             logger.debug("{} inverters found:", inverters.size());
@@ -165,12 +165,12 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                     complete = false;
                 }
 
-                logger.debug("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
-                logger.debug("Device Name:      {}", inv.getDeviceName());
+                logger.trace("SUSyID: {} - SN: {}", inv.getSerial().suSyID, inv.getSerial().serial);
+                logger.trace("Device Name:      {}", inv.getDeviceName());
                 // logger.info("Device Class: {}", inv.deviceClass);
-                logger.debug("Device Type:      {}", inv.getDeviceType());
-                logger.debug("Software Version: {}", inv.swVersion);
-                logger.debug("Serial number:    {}", inv.getSerial().serial);
+                logger.trace("Device Type:      {}", inv.getDeviceType());
+                logger.trace("Software Version: {}", inv.swVersion);
+                logger.trace("Serial number:    {}", inv.getSerial().serial);
             }
             if (complete) {
                 for (Entry<Integer, SmaHandler> handler : attachedThingsCopy.entrySet()) {

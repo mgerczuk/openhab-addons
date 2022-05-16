@@ -16,13 +16,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
-import org.bouncycastle.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
 public class PPPFrame {
+
+    private static final Logger logger = LoggerFactory.getLogger(PPPFrame.class);
 
     public static final byte HDLC_ADR_BROADCAST = (byte) 0xff;
 
@@ -75,6 +79,11 @@ public class PPPFrame {
 
         short2le(frame, 5 + payload.length, crc.get());
         frame[frame.length - 1] = HDLC_SYNC;
+
+        if (frame[5 + payload.length] == HDLC_SYNC || frame[5 + payload.length] == HDLC_ESC
+                || frame[6 + payload.length] == HDLC_SYNC || frame[6 + payload.length] == HDLC_ESC) {
+            logger.warn("CRC contains special character - problems?");
+        }
 
         return frame;
     }
