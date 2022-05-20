@@ -88,6 +88,20 @@ public class PPPFrame {
         return frame;
     }
 
+    public static boolean peek(InputStream is, byte address, byte control, short protocol) throws IOException {
+        is.mark(5);
+
+        byte[] header = new byte[5];
+        if (is.read(header) < header.length) {
+            return false;
+        }
+
+        is.reset();
+
+        return header[0] == HDLC_SYNC && header[1] == address && header[2] == control
+                && be2short(header, 3) == protocol;
+    }
+
     public static PPPFrame read(InputStream is) throws IOException {
 
         byte[] header = new byte[5];
@@ -112,24 +126,23 @@ public class PPPFrame {
         ByteArrayOutputStream payloadStream = new ByteArrayOutputStream(1024);
 
         int c = esc.read();
-        while (c != HDLC_SYNC) {
+        while (c >= 0) {
             payloadStream.write(c);
             c = esc.read();
         }
 
         byte[] buffer = payloadStream.toByteArray();
-
-        for (int i = 0; i < buffer.length - 2; i++) {
-            crc.writeByte(buffer[i]);
-        }
-
-        short fcs_is = (short) le2short(buffer, buffer.length - 2);
-        short fcs = crc.get();
-        if (fcs_is != fcs) {
-            throw new IOException("FCS failure");
-        }
-
         byte[] payload = Arrays.copyOf(buffer, buffer.length - 2);
+        short fcs_read = (short) le2short(buffer, buffer.length - 2);
+
+        for (int i = 0; i < payload.length; i++) {
+            crc.writeByte(payload[i]);
+        }
+
+        short fcs_calc = crc.get();
+        if (fcs_read != fcs_calc) {
+            throw new IOException("FCS mismatch");
+        }
 
         PPPFrame result = new PPPFrame(address, control, protocol, payload);
 

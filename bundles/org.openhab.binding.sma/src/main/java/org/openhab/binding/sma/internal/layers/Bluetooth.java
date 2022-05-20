@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -83,6 +82,10 @@ public class Bluetooth extends AbstractPhysicalLayer {
         }
     }
 
+    protected StreamConnection getConnection() throws IOException {
+        return (StreamConnection) Connector.open(destAddress.getConnectorString());
+    }
+
     public SmaBluetoothAddress getHeaderAddress() {
         return new SmaBluetoothAddress(commBuf, 4);
     }
@@ -97,11 +100,10 @@ public class Bluetooth extends AbstractPhysicalLayer {
         if (connection == null) {
             logger.debug("Bluetooth({}).open()", System.identityHashCode(this));
 
-            connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
+            connection = getConnection();
 
             out = connection.openDataOutputStream();
             in = new TimeoutInputStream(connection.openDataInputStream(), READ_TIMEOUT_MILLIS);
-
         }
     }
 
@@ -117,7 +119,6 @@ public class Bluetooth extends AbstractPhysicalLayer {
             } catch (IOException e) {
                 logger.error("Error closing Bluetooth socket", e);
             }
-
         }
 
         connection = null;
@@ -227,6 +228,41 @@ public class Bluetooth extends AbstractPhysicalLayer {
         return receive(SmaBluetoothAddress.BROADCAST, wait4Command);
     }
 
+    protected byte[] receive1(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
+
+        logger.trace("receive(...,{})", wait4Command);
+
+        int command = 0;
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ByteArrayOutputStream osAll = new ByteArrayOutputStream(); // TODO: remove
+
+        do {
+            SMAFrame f = SMAFrame.read(in);
+
+            logger.trace("data received: \n{}", bytesToHex(f.getFrame()));
+
+            if (destAddress.equals(f.getSourceAddress())) {
+
+                logger.trace("source: {}", f.getSourceAddress().toString());
+                logger.trace("destination: {}", f.getDestinationAddress().toString());
+
+                logger.trace("receiving cmd {}", f.getControl());
+
+                command = f.getControl();
+                os.write(f.getPayload());
+                osAll.write(f.getFrame());
+            }
+        } while ((command != wait4Command) && (0xFF != wait4Command));
+
+        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+        if (PPPFrame.peek(is, PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL)) {
+            PPPFrame pf = PPPFrame.read(is);
+            return pf.getFrame(); // TODO: getPayload()
+        }
+
+        return osAll.toByteArray();
+    }
+
     protected byte[] receive(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
         SmaBluetoothAddress sourceAddr = new SmaBluetoothAddress();
         SmaBluetoothAddress destinationAddr = new SmaBluetoothAddress();
@@ -241,7 +277,6 @@ public class Bluetooth extends AbstractPhysicalLayer {
         int command = 0;
         int bib = 0;
         final byte[] data = new byte[1024];
-        byte[] dummy = new byte[0];
 
         do {
             commBuf = new byte[1024];
@@ -277,11 +312,6 @@ public class Bluetooth extends AbstractPhysicalLayer {
                     }
 
                     if (hasL2pckt == 1) {
-
-                        ByteArrayInputStream is = new ByteArrayInputStream(commBuf, 18, pkLength - 18);
-                        PPPFrame frame = PPPFrame.read(is);
-                        dummy = frame.getFrame();
-
                         // Copy CommBuf to packetbuffer
                         boolean escNext = false;
 
@@ -335,8 +365,6 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
         logger.trace("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
                 bytesToHex(data, bib));
-
-        boolean x = Arrays.equals(Arrays.copyOfRange(data, 0, bib), dummy);
 
         return data;
     }

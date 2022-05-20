@@ -21,13 +21,27 @@ import java.io.InputStream;
  */
 public class EscapeInputStream extends FilterInputStream {
 
+    private boolean isEof = false;
+
     protected EscapeInputStream(InputStream in) {
         super(in);
     }
 
     @Override
     public int read() throws IOException {
+
+        if (isEof) {
+            return -1;
+        }
+
         int c = super.read();
+        if (c < 0) {
+            throw new IOException("EOF");
+        }
+        if (c == PPPFrame.HDLC_SYNC) {
+            isEof = true;
+            return -1;
+        }
         if (c == PPPFrame.HDLC_ESC) {
             return super.read() ^ 0x20;
         }

@@ -87,7 +87,7 @@ public class SmaHandler extends BaseThingHandler {
     }
 
     public void dataReceived(Data inv) {
-        logger.debug("dataReceived");
+        logger.trace("dataReceived");
 
         for (Entry<LRIDefinition, State> entry : inv.getEntries()) {
             updateState(new ChannelUID(getThing().getUID(), entry.getKey().getChannelId()), entry.getValue());

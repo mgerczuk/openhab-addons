@@ -27,7 +27,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testInit() {
         BluetoothDebug bt = new BluetoothDebug();
-        BluetoothDebug.setDebugData(concat(readInit), writeInit);
+        bt.setDebugData(concat(readInit), writeInit);
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
                 new SmaBinding().createDevice("00:80:25:15:B6:06", "0000"));
         try {

@@ -12,11 +12,9 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+
+import javax.microedition.io.StreamConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +23,10 @@ import org.slf4j.LoggerFactory;
  * @author Martin Gerczuk - Initial contribution
  */
 public class BluetoothDebug extends Bluetooth {
+
     private static final Logger logger = LoggerFactory.getLogger(BluetoothDebug.class);
+
+    private StreamConnectionDebug connectionDebug = new StreamConnectionDebug();
 
     public BluetoothDebug() {
         super("00802515B606");
@@ -33,42 +34,8 @@ public class BluetoothDebug extends Bluetooth {
     }
 
     @Override
-    public void open() throws IOException {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public void sendFrame(SMAFrame frame) throws IOException {
-
-        ByteArrayOutputStream temp = new ByteArrayOutputStream();
-        frame.write(temp);
-        byte[] buffer = temp.toByteArray();
-
-        logger.info("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer));
-        assertTrue(Arrays.equals(buffer, writes[writeInx++].data));
-    }
-
-    @Override
-    public void send() throws IOException {
-        writePacketLength();
-        logger.info("\n{}\n{} Bytes sent", bytesToHex(buffer, packetposition, ' '), packetposition);
-
-        assertTrue(Arrays.equals(Arrays.copyOfRange(buffer, 0, packetposition), writes[writeInx++].data));
-    }
-
-    @Override
-    protected int read(byte[] buf, int offset, int len) throws IOException {
-        ReadCall c = calls[callInx++];
-        System.arraycopy(c.data, 0, buf, offset, c.data.length);
-        if (c.result < 0) {
-            throw new IOException("Timeout reading socket");
-        }
-
-        logger.debug("\nReceived {} bytes", len);
-        return c.result;
+    protected StreamConnection getConnection() throws IOException {
+        return connectionDebug;
     }
 
     public static class ReadCall {
@@ -89,14 +56,24 @@ public class BluetoothDebug extends Bluetooth {
         }
     }
 
-    private static ReadCall[] calls;
-    private static int callInx = 0;
-    private static WriteCall[] writes;
-    private static int writeInx = 0;
+    private ReadCall[] calls;
+    private int callInx = 0;
+    private WriteCall[] writes;
+    private int writeInx = 0;
 
-    public static void setDebugData(ReadCall[] calls0, WriteCall[] writes0) {
+    public void setDebugData(ReadCall[] calls0, WriteCall[] writes0) {
         calls = calls0;
         writes = writes0;
+
+        for (ReadCall c : calls0) {
+            connectionDebug.addReadData(c.data);
+        }
+
+        if (writes0 != null) {
+            for (WriteCall c : writes0) {
+                connectionDebug.addWriteData(c.data);
+            }
+        }
     }
 
     static int timeInx = 0;

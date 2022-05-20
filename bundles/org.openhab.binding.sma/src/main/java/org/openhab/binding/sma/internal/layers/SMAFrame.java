@@ -24,32 +24,52 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
  */
 public class SMAFrame {
 
+    // length of package header
+    public static final int HEADERLENGTH = 18;
+
     int control;
-    SmaBluetoothAddress localAddress;
-    SmaBluetoothAddress destaddress;
+    SmaBluetoothAddress sourceAddress;
+    SmaBluetoothAddress destinationAddress;
+
     byte[] payload;
 
     public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
         this.control = control;
-        this.localAddress = localaddress;
-        this.destaddress = destaddress;
+        this.sourceAddress = localaddress;
+        this.destinationAddress = destaddress;
         this.payload = payload;
     }
 
     public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, PPPFrame frame)
             throws IOException {
         this.control = control;
-        this.localAddress = localaddress;
-        this.destaddress = destaddress;
+        this.sourceAddress = localaddress;
+        this.destinationAddress = destaddress;
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         frame.write(os);
         payload = os.toByteArray();
     }
 
+    public int getControl() {
+        return control;
+    }
+
+    public SmaBluetoothAddress getSourceAddress() {
+        return sourceAddress;
+    }
+
+    public SmaBluetoothAddress getDestinationAddress() {
+        return destinationAddress;
+    }
+
+    public byte[] getPayload() {
+        return payload;
+    }
+
     public byte[] getFrame() {
 
-        int totalLength = 18 + payload.length;
+        int totalLength = HEADERLENGTH + payload.length;
         byte[] buffer = new byte[totalLength];
 
         buffer[0] = PPPFrame.HDLC_SYNC;
@@ -58,24 +78,24 @@ public class SMAFrame {
         buffer[3] = (byte) (buffer[0] ^ buffer[1] ^ buffer[2]);
 
         for (int i = 0; i < 6; i++) {
-            buffer[4 + i] = localAddress.get(i);
+            buffer[4 + i] = sourceAddress.get(i);
         }
 
         for (int i = 0; i < 6; i++) {
-            buffer[10 + i] = destaddress.get(i);
+            buffer[10 + i] = destinationAddress.get(i);
         }
 
         buffer[16] = (byte) (control & 0xFF);
         buffer[17] = (byte) (control >>> 8);
 
-        System.arraycopy(payload, 0, buffer, 18, payload.length);
+        System.arraycopy(payload, 0, buffer, HEADERLENGTH, payload.length);
 
         return buffer;
     }
 
     public static SMAFrame read(InputStream is) throws IOException {
 
-        byte[] header = new byte[18];
+        byte[] header = new byte[HEADERLENGTH];
         if (is.read(header) < header.length) {
             throw new IOException("EOF");
         }
@@ -84,7 +104,7 @@ public class SMAFrame {
             throw new IOException("SYNC expected");
         }
 
-        int length = le2short(header, 1);
+        int length = le2short(header, 1) - HEADERLENGTH;
         byte[] payload = new byte[length];
         if (is.read(payload) < length) {
             throw new IOException("EOF");

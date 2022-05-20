@@ -35,5 +35,4 @@ public class EscapeOutputStream extends FilterOutputStream {
             super.write(v);
         }
     }
-
 }

@@ -147,7 +147,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             logger.trace("*******************");
 
             ArrayList<BluetoothSolarInverterPlant.Data> inverters = plant.getInverters();
-            logger.debug("{} inverters found:", inverters.size());
+            logger.trace("{} inverters found:", inverters.size());
             // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
             boolean complete = true;
             for (BluetoothSolarInverterPlant.Data inv : inverters) {
@@ -155,7 +155,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 discoveryService.notifyDiscovery(inv.getSerial().suSyID,
                         inv.getDeviceType() + " " + inv.getDeviceName());
 
-                logger.debug("attachedThings = {}", attachedThingsCopy.toString());
+                logger.trace("attachedThings = {}", attachedThingsCopy.toString());
                 SmaHandler handler = attachedThingsCopy.get(new Integer(inv.getSerial().suSyID));
                 if (handler != null) {
                     handler.dataReceived(inv);
