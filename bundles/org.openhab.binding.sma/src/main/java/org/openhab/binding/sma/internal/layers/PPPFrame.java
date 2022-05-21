@@ -80,25 +80,16 @@ public class PPPFrame {
         short2le(frame, 5 + payload.length, crc.get());
         frame[frame.length - 1] = HDLC_SYNC;
 
-        if (frame[5 + payload.length] == HDLC_SYNC || frame[5 + payload.length] == HDLC_ESC
-                || frame[6 + payload.length] == HDLC_SYNC || frame[6 + payload.length] == HDLC_ESC) {
-            logger.warn("CRC contains special character - problems?");
+        if (EscapeOutputStream.needsEscape(frame[5 + payload.length])
+                || EscapeOutputStream.needsEscape(frame[6 + payload.length])) {
+            logger.debug("CRC contains special character - problems?");
         }
 
         return frame;
     }
 
-    public static boolean peek(InputStream is, byte address, byte control, short protocol) throws IOException {
-        is.mark(5);
-
-        byte[] header = new byte[5];
-        if (is.read(header) < header.length) {
-            return false;
-        }
-
-        is.reset();
-
-        return header[0] == HDLC_SYNC && header[1] == address && header[2] == control
+    public static boolean peek(byte[] header, byte address, byte control, short protocol) {
+        return header.length >= 5 && header[0] == HDLC_SYNC && header[1] == address && header[2] == control
                 && be2short(header, 3) == protocol;
     }
 

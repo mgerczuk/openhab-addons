@@ -86,8 +86,10 @@ public class Bluetooth extends AbstractPhysicalLayer {
         return (StreamConnection) Connector.open(destAddress.getConnectorString());
     }
 
+    private SmaBluetoothAddress currentHeaderAddress; // TODO: get rid of hack!
+
     public SmaBluetoothAddress getHeaderAddress() {
-        return new SmaBluetoothAddress(commBuf, 4);
+        return currentHeaderAddress;
     }
 
     public boolean isOpen() {
@@ -228,16 +230,16 @@ public class Bluetooth extends AbstractPhysicalLayer {
         return receive(SmaBluetoothAddress.BROADCAST, wait4Command);
     }
 
-    protected byte[] receive1(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
+    protected byte[] receive(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
 
         logger.trace("receive(...,{})", wait4Command);
 
         int command = 0;
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        ByteArrayOutputStream osAll = new ByteArrayOutputStream(); // TODO: remove
+        ByteArrayOutputStream os = null;
+        SMAFrame f = null;
 
         do {
-            SMAFrame f = SMAFrame.read(in);
+            f = SMAFrame.read(in);
 
             logger.trace("data received: \n{}", bytesToHex(f.getFrame()));
 
@@ -248,125 +250,29 @@ public class Bluetooth extends AbstractPhysicalLayer {
 
                 logger.trace("receiving cmd {}", f.getControl());
 
+                currentHeaderAddress = f.getSourceAddress();
+
                 command = f.getControl();
-                os.write(f.getPayload());
-                osAll.write(f.getFrame());
+                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
+                        SMAPPPFrame.PROTOCOL)) {
+                    os = new ByteArrayOutputStream();
+                }
+
+                if (os != null) {
+                    os.write(f.getPayload());
+                }
             }
         } while ((command != wait4Command) && (0xFF != wait4Command));
 
-        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-        if (PPPFrame.peek(is, PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL)) {
+        // ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+        // if (PPPFrame.peek(is, PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL)) {
+        if (os != null) {
+            ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
             PPPFrame pf = PPPFrame.read(is);
             return pf.getFrame(); // TODO: getPayload()
         }
 
-        return osAll.toByteArray();
-    }
-
-    protected byte[] receive(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
-        SmaBluetoothAddress sourceAddr = new SmaBluetoothAddress();
-        SmaBluetoothAddress destinationAddr = new SmaBluetoothAddress();
-        commBuf = null;
-
-        logger.trace("getPacket({})", wait4Command);
-
-        int index = 0;
-        int hasL2pckt = 0;
-
-        int rc = 0;
-        int command = 0;
-        int bib = 0;
-        final byte[] data = new byte[1024];
-
-        do {
-            commBuf = new byte[1024];
-            bib = read(commBuf, 0, HEADERLENGTH);
-
-            // int SOP = data[0];
-            // data are in litle endian. getUnsignedShort exact big endian
-            int pkLength = AbstractPhysicalLayer.getShort(commBuf, 1);
-            // int pkChecksum = data[3];
-
-            sourceAddr.setAddress(commBuf, 4);
-            destinationAddr.setAddress(commBuf, 10);
-
-            command = AbstractPhysicalLayer.getShort(commBuf, 16);
-
-            if (pkLength > HEADERLENGTH) {
-                // data = new byte[pkLength - HEADERLENGTH];
-                bib += read(commBuf, HEADERLENGTH, pkLength - HEADERLENGTH);
-
-                logger.trace("data received: \n{}", bytesToHex(commBuf, pkLength));
-                // Check if data is coming from the right inverter
-                if (destAddress.equals(sourceAddr)) {
-                    rc = 0;
-                    logger.trace("source: {}", sourceAddr.toString());
-                    logger.trace("destination: {}", destinationAddr.toString());
-
-                    logger.trace("receiving cmd {}", command);
-
-                    if ((hasL2pckt == 0) && commBuf[18] == (byte) HDLC_SYNC && commBuf[19] == (byte) 0xff
-                            && commBuf[20] == (byte) 0x03 && commBuf[21] == (byte) 0x60 && commBuf[22] == (byte) 0x65) // 0x656003FF7E
-                    {
-                        hasL2pckt = 1;
-                    }
-
-                    if (hasL2pckt == 1) {
-                        // Copy CommBuf to packetbuffer
-                        boolean escNext = false;
-
-                        logger.trace("PacketLength={}", pkLength);
-
-                        for (int i = HEADERLENGTH; i < pkLength; i++) {
-                            data[index] = commBuf[i];
-                            // Keep 1st byte raw unescaped HDLC_SYNC
-                            if (escNext == true) {
-                                data[index] ^= 0x20;
-                                escNext = false;
-                                index++;
-                            } else {
-                                if (data[index] == HDLC_ESC) {
-                                    escNext = true; // Throw away the HDLC_ESC byte
-                                } else {
-                                    index++;
-                                }
-                            }
-                            if (index >= 520) {
-                                logger.warn("Warning: pcktBuf buffer overflow! ({})\n", index);
-                                throw new ArrayIndexOutOfBoundsException();
-                            }
-                        }
-
-                        bib = index;
-
-                        // logger.debug("data decoded: \n{}", bytesToHex(data, data.length));
-                    } else {
-                        System.arraycopy(commBuf, 0, data, 0, bib);
-                    }
-                } // isValidSender()
-                else {
-                    rc = -1; // E_RETRY;
-                    logger.debug("Wrong sender: {}", sourceAddr);
-                    throw new IOException(String.format("Wrong sender: %s", sourceAddr));
-                }
-
-            } else {
-                // Check if data is coming from the right inverter
-                if (destAddress.equals(sourceAddr)) {
-                    bib = commBuf.length;
-                    System.arraycopy(commBuf, 0, data, 0, commBuf.length);
-                } else {
-                    rc = -1; // E_RETRY;
-                    logger.debug("Wrong sender: {}", sourceAddr);
-                    throw new IOException(String.format("Wrong sender: %s", sourceAddr));
-                }
-            }
-        } while (((command != wait4Command) || (rc == -1/* E_RETRY */)) && (0xFF != wait4Command));
-
-        logger.trace("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
-                bytesToHex(data, bib));
-
-        return data;
+        return f.getFrame(); // TODO: getPayload()
     }
 
     @Override

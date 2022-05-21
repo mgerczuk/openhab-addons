@@ -38,6 +38,35 @@ public class BluetoothDebug extends Bluetooth {
         return connectionDebug;
     }
 
+    public void addReadData(byte[] data) {
+        connectionDebug.addReadData(data);
+    }
+
+    public void addReadData(String... data) {
+        for (String s : data) {
+            addReadData(stringToBytes(s));
+        }
+    }
+
+    public void addWriteData(byte[] data) {
+        connectionDebug.addWriteData(data);
+    }
+
+    public void addWriteData(String... data) {
+        for (String s : data) {
+            addWriteData(stringToBytes(s));
+        }
+    }
+
+    private byte[] stringToBytes(String data) {
+        String[] digits = data.split("\\s+");
+        byte[] result = new byte[digits.length];
+        for (int i = 0; i < digits.length; i++) {
+            result[i] = (byte) Integer.parseInt(digits[i], 16);
+        }
+        return result;
+    }
+
     public static class ReadCall {
         int result;
         byte[] data;
@@ -82,5 +111,10 @@ public class BluetoothDebug extends Bluetooth {
     @Override
     public int currentTimeSeconds() {
         return timeValues[timeInx++];
+    }
+
+    @Override
+    public int getTimezoneOffset() {
+        return 3600;
     }
 }

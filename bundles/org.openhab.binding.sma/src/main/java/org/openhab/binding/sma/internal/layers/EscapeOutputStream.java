@@ -28,11 +28,15 @@ public class EscapeOutputStream extends FilterOutputStream {
     @Override
     public void write(int v) throws IOException {
 
-        if (v == PPPFrame.HDLC_ESC || v == PPPFrame.HDLC_SYNC || v == 0x11 || v == 0x12 || v == 0x13) {
+        if (needsEscape(v)) {
             super.write(PPPFrame.HDLC_ESC);
             super.write(v ^ 0x20);
         } else {
             super.write(v);
         }
+    }
+
+    public static boolean needsEscape(int v) {
+        return v == PPPFrame.HDLC_ESC || v == PPPFrame.HDLC_SYNC || v == 0x11 || v == 0x12 || v == 0x13;
     }
 }
