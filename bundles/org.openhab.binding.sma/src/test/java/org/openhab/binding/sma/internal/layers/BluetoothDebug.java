@@ -30,7 +30,6 @@ public class BluetoothDebug extends Bluetooth {
 
     public BluetoothDebug() {
         super("00802515B606");
-        SMAPPPFrame.AppSerial = 934043669;
     }
 
     @Override
