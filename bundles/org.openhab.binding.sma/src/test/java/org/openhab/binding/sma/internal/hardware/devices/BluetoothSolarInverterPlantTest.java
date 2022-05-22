@@ -151,10 +151,46 @@ public class BluetoothSolarInverterPlantTest {
                 "01 00 00 00 01 00 00 00 28 E0", //
                 "7E");
 
+        // getInverterData(SmaDevice.InverterDataType.SoftwareVersion = 2048)
+
+        bt.addWriteData( //
+                "7E 3F 00 41 3C 40 B8 EB 27 B8", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 15 60 AC 37", //
+                "00 00 00 00 00 00 06 80 00 02", //
+                "00 58 00 34 82 00 FF 34 82 00", //
+                "F3 D5 7E");
+        bt.addReadData(//
+                "7E 6A 00 14 54 2D 15 25 80 00", //
+                "3C 40 B8 EB 27 B8 01 00 7E FF", //
+                "03 60 65 7D 33 80 7D 5D 00 15", //
+                "60 AC 37 00 A0 63 00 C5 68 49", //
+                "77 00 00 00 00 00 00 06 80 01", //
+                "02 00 58 05 00 00 00 05 00 00", //
+                "00 01 34 82 00 FE B7 FD 59 00", //
+                "00 00 00 00 00 00 00 FE FF FF", //
+                "FF FE FF FF FF 04 7A 09 7D 32", //
+                "04 7A 09 7D 32 00 00 00 00 00", //
+                "00 00 00 60 6F 7E");
+        bt.addReadData(// HACK: repeat last frame...
+                "7E 6A 00 14 54 2D 15 25 80 00", //
+                "3C 40 B8 EB 27 B8 01 00 7E FF", //
+                "03 60 65 7D 33 80 7D 5D 00 15", //
+                "60 AC 37 00 A0 63 00 C5 68 49", //
+                "77 00 00 00 00 00 00 06 80 01", //
+                "02 00 58 05 00 00 00 05 00 00", //
+                "00 01 34 82 00 FE B7 FD 59 00", //
+                "00 00 00 00 00 00 00 FE FF FF", //
+                "FF FE FF FF FF 04 7A 09 7D 32", //
+                "04 7A 09 7D 32 00 00 00 00 00", //
+                "00 00 00 60 6F 7E");
+
+        bt.setCurrentTimeSeconds(1509799909, 1509799910, 1509799910, 1509799910, 1509799910, 1509799910);
+        bt.setTimezoneOffset(3600);
+
         try {
             plant.init(bt);
-            plant.logon(SmaUserGroup.User, "0000");
-            plant.setInverterTime();
         } catch (IOException e) {
             fail(e.getMessage());
         }
@@ -169,6 +205,14 @@ public class BluetoothSolarInverterPlantTest {
         assertEquals(4, inverters.get(1).getNetID());
         assertEquals("00:80:25:15:B6:06", inverters.get(1).getBTAddressAsString());
         assertEquals("SmaSerial [suSyID=113, serial=2100246573]", inverters.get(1).getSerial().toString());
+
+        try {
+            plant.logon(SmaUserGroup.User, "0000");
+            plant.setInverterTime();
+            plant.getInverterData(SmaDevice.InverterDataType.SoftwareVersion);
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
     }
 
     static BluetoothDebug.ReadCall[] concat(BluetoothDebug.ReadCall[]... arrays) {

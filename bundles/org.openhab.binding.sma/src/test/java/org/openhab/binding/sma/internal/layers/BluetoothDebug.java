@@ -105,16 +105,27 @@ public class BluetoothDebug extends Bluetooth {
         }
     }
 
-    static int timeInx = 0;
-    static int[] timeValues = { 1509799909, 1509799910, 1509799910, 1509799910, 1509799910, 1509799910 };
+    int timeInx = 0;
+    int[] timeValues;
+
+    public void setCurrentTimeSeconds(int... v) {
+        timeValues = v;
+        timeInx = 0;
+    }
 
     @Override
     public int currentTimeSeconds() {
         return timeValues[timeInx++];
     }
 
+    int timezoneOffset = 3600;
+
+    public void setTimezoneOffset(int v) {
+        timezoneOffset = v;
+    }
+
     @Override
     public int getTimezoneOffset() {
-        return 3600;
+        return timezoneOffset;
     }
 }

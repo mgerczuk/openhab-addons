@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openhab.binding.sma.internal.SmaBinding.Device;
-import org.openhab.binding.sma.internal.layers.AbstractPhysicalLayer;
+import org.openhab.binding.sma.internal.layers.Utils;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.layers.LittleEndianByteArrayOutputStream;
 import org.openhab.binding.sma.internal.layers.SMAFrame;
@@ -131,7 +131,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             data = layer.receive(0x05);
 
             // Get network topology
-            int pcktsize = AbstractPhysicalLayer.getShort(data, 1);
+            int pcktsize = Utils.getShort(data, 1);
             int devcount = 1;
             inverters = new ArrayList<BluetoothSolarInverterPlant.Data>();
 
@@ -158,21 +158,24 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             if ((inverters.size() == 1) && (netID > 1)) {
                 // We need more handshake 03/04 commands to initialise network
                 // connection between inverters
-                layer.writePacketHeader(0x03);
-                layer.writeShort((short) 0x000A);
-                layer.writeByte((byte) 0xAC);
-                layer.send();
+                layer.sendFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                        new LittleEndianByteArrayOutputStream()//
+                                .writeShort((short) 0x000A)//
+                                .writeByte((byte) 0xAC)//
+                                .toByteArray()));
                 data = layer.receive(0x04);
 
-                layer.writePacketHeader(0x03);
-                layer.writeShort((short) 0x0002);
-                layer.send();
+                layer.sendFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                        new LittleEndianByteArrayOutputStream()//
+                                .writeShort((short) 0x0002)//
+                                .toByteArray()));
                 data = layer.receive(0x04);
 
-                layer.writePacketHeader(0x03);
-                layer.writeShort((short) 0x0001);
-                layer.writeByte((byte) 0x01);
-                layer.send();
+                layer.sendFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                        new LittleEndianByteArrayOutputStream()//
+                                .writeShort((short) 0x0001)//
+                                .writeByte((byte) 0x01)//
+                                .toByteArray()));
                 data = layer.receive(0x04);
 
                 /******************************************************************
@@ -190,7 +193,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                     // is allowed
                     try {
                         data = layer.receive(0xFF);
-                        packetType = AbstractPhysicalLayer.getShort(data, 16);
+                        packetType = Utils.getShort(data, 16);
                         break;
                     } catch (IOException e) {
                     }
@@ -205,7 +208,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 if (0x1001 == packetType) {
                     packetType = 0; // reset it
                     data = layer.receive(0x05);
-                    packetType = AbstractPhysicalLayer.getShort(data, 16);
+                    packetType = Utils.getShort(data, 16);
                 }
 
                 logger.debug("PacketType ({})\n", packetType);
@@ -217,7 +220,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                      */
 
                     // Get network topology
-                    pcktsize = AbstractPhysicalLayer.getShort(data, 1);
+                    pcktsize = Utils.getShort(data, 1);
                     devcount = 1;
                     inverters.clear();
 
@@ -270,8 +273,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             // Send broadcast request for identification
             layer.sendFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, AbstractPhysicalLayer.ANYSUSYID,
-                                    AbstractPhysicalLayer.ANYSERIAL, ++pcktID) //
+                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, Utils.ANYSUSYID,
+                                    Utils.ANYSERIAL, ++pcktID) //
                             .writeInt(0x00000200)//
                             .writeInt(0x0)//
                             .writeInt(0x0)//
@@ -286,8 +289,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
                 BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
                 if (current != null) {
-                    SmaSerial serial = new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 55),
-                            AbstractPhysicalLayer.getInt(data, 57));
+                    SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 55),
+                            Utils.getInt(data, 57));
                     current.setSerial(serial);
 
                     logger.debug("SUSyID: {} - SN: {}\n", serial.suSyID, serial.serial);
@@ -338,24 +341,19 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
             int now;
 
-            do {
-                pcktID++;
-                now = layer.currentTimeSeconds();
+            now = layer.currentTimeSeconds();
 
-                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, AbstractPhysicalLayer.ANYSUSYID,
-                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
-                layer.write(0xFFFD040C);
-                layer.write(userGroup.getValue()); // User / Installer
-                layer.write(0x00000384); // Timeout = 900sec ?
-                layer.write(now);
-                layer.write(0x0);
-                layer.write(pw, pw.length);
-                layer.writePppTrailer();
-                layer.writePacketLength();
-            } while (!layer.isCrcValid());
-
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+                    SMAPPPFrame
+                            .writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, Utils.ANYSUSYID,
+                                    Utils.ANYSERIAL, ++pcktID)//
+                            .writeInt(0xFFFD040C)//
+                            .writeInt(userGroup.getValue()) // User / Installer
+                            .writeInt(0x00000384) // Timeout = 900sec ?
+                            .writeInt(now)//
+                            .writeInt(0x0)//
+                            .writeBytes(pw)//
+                            .toPPPFrame()));
 
             do {
                 // All inverters *should* reply with their SUSyID & SerialNr
@@ -364,14 +362,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                     byte[] data = layer.receiveAll(0x01);
                     SmaBluetoothAddress address = layer.getHeaderAddress();
 
-                    short rcvpcktID = (short) (AbstractPhysicalLayer.getShort(data, 27) & 0x7FFF);
+                    short rcvpcktID = (short) (Utils.getShort(data, 27) & 0x7FFF);
                     logger.debug("rcvpcktID id {}", rcvpcktID);
 
-                    if ((pcktID == rcvpcktID) && (AbstractPhysicalLayer.getInt(data, 41) == now)) {
+                    if ((pcktID == rcvpcktID) && (Utils.getInt(data, 41) == now)) {
                         BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
                         if (current != null) {
-                            current.setSerial(new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 15),
-                                    AbstractPhysicalLayer.getInt(data, 17)));
+                            current.setSerial(new SmaSerial((short) Utils.getShort(data, 15),
+                                    Utils.getInt(data, 17)));
 
                             validPcktID = true;
                         } else {
@@ -390,17 +388,13 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     public void logoff() throws IOException {
         logger.debug("logoff SMA Inverter");
         try {
-            do {
-                pcktID++;
-                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, AbstractPhysicalLayer.ANYSUSYID,
-                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
-                layer.write(0xFFFD010E);
-                layer.write(0xFFFFFFFF);
-                layer.writePppTrailer();
-                layer.writePacketLength();
-            } while (!layer.isCrcValid());
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+                    SMAPPPFrame
+                            .writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, Utils.ANYSUSYID,
+                                    Utils.ANYSERIAL, ++pcktID) //
+                            .writeInt(0xFFFD010E)//
+                            .writeInt(0xFFFFFFFF)//
+                            .toPPPFrame()));
         } catch (IOException e) {
             throw new IOException("logoff failed: " + e.getMessage());
         }
@@ -416,26 +410,22 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             logger.debug("Local Time: {}", new Date(localtime * 1000L));
             logger.debug("TZ offset (s): {}", tzOffset);
 
-            do {
-                pcktID++;
-                layer.writePacketHeader(0x01, rootDeviceAdress);
-                layer.writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, AbstractPhysicalLayer.ANYSUSYID,
-                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
-                layer.write(0xF000020A);
-                layer.write(0x00236D00);
-                layer.write(0x00236D00);
-                layer.write(0x00236D00);
-                layer.write(localtime);
-                layer.write(localtime);
-                layer.write(localtime);
-                layer.write(tzOffset);
-                layer.write(1);
-                layer.write(1);
-                layer.writePppTrailer();
-                layer.writePacketLength();
-            } while (!layer.isCrcValid());
-
-            layer.send();
+            pcktID++;
+            layer.sendFrame(new SMAFrame(0x01, layer.localAddress, rootDeviceAdress, //
+                    SMAPPPFrame
+                            .writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, Utils.ANYSUSYID,
+                                    Utils.ANYSERIAL, pcktID)//
+                            .writeInt(0xF000020A)//
+                            .writeInt(0x00236D00)//
+                            .writeInt(0x00236D00)//
+                            .writeInt(0x00236D00)//
+                            .writeInt(localtime)//
+                            .writeInt(localtime)//
+                            .writeInt(localtime)//
+                            .writeInt(tzOffset)//
+                            .writeInt(1)//
+                            .writeInt(1)//
+                            .toPPPFrame()));
         } catch (IOException e) {
             throw new IOException("setInverterTime failed: " + e.getMessage());
         }
@@ -472,19 +462,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         try {
             // layer.open();
 
-            do {
-                pcktID++;
-                layer.writePacketHeader(0x01, SmaBluetoothAddress.BROADCAST);
-                layer.writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, AbstractPhysicalLayer.ANYSUSYID,
-                        AbstractPhysicalLayer.ANYSERIAL, pcktID);
-                layer.write(command);
-                layer.write(first);
-                layer.write(last);
-                layer.writePppTrailer();
-                layer.writePacketLength();
-            } while (!layer.isCrcValid());
-
-            layer.send();
+            layer.sendFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+                    SMAPPPFrame
+                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, Utils.ANYSUSYID,
+                                    Utils.ANYSERIAL, ++pcktID)//
+                            .writeInt(command)//
+                            .writeInt(first)//
+                            .writeInt(last)//
+                            .toPPPFrame()));
 
             byte[] data;
 
@@ -497,11 +482,11 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                      * return E_CHKSUM; else
                      */
                     {
-                        short rcvpcktID = (short) (AbstractPhysicalLayer.getShort(data, 27) & 0x7FFF);
+                        short rcvpcktID = (short) (Utils.getShort(data, 27) & 0x7FFF);
                         if (pcktID == rcvpcktID) {
 
-                            SmaSerial serial = new SmaSerial((short) AbstractPhysicalLayer.getShort(data, 15),
-                                    AbstractPhysicalLayer.getInt(data, 17));
+                            SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 15),
+                                    Utils.getInt(data, 17));
                             BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
                             if (current != null) {
@@ -509,7 +494,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                 int value = 0;
                                 long value64 = 0;
                                 for (int i = 41; i < data.length - 3; i += recordsize) {
-                                    int code = AbstractPhysicalLayer.getInt(data, i);
+                                    int code = Utils.getInt(data, i);
                                     // LRIDefinition lri = LRIDefinition
                                     // .fromOrdinal(code & 0x00FFFF00);
                                     // int cls = code & 0xFF;
@@ -528,7 +513,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                     }
 
                                     char dataType = (char) (code >>> 24);
-                                    Date datetime = new Date(AbstractPhysicalLayer.getInt(data, i + 4) * 1000L);
+                                    Date datetime = new Date(Utils.getInt(data, i + 4) * 1000L);
 
                                     // fix: We can't rely on dataType because it
                                     // can be both 0x00 or 0x40 for DWORDs
@@ -537,14 +522,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             || (lri == LRIDefinition.MeteringTotFeedTms)
                                             || (lri == LRIDefinition.MeteringTotOpTms)) // QWORD
                                     {
-                                        value64 = AbstractPhysicalLayer.getLong(data, i + 8);
+                                        value64 = Utils.getLong(data, i + 8);
                                         if ((value64 == NaN_S64) || (value64 == NaN_U64)) {
                                             value64 = 0;
                                         }
                                     } else if ((dataType != 0x10) && (dataType != 0x08))
                                     // Not TEXT or STATUS, so it should be DWORD
                                     {
-                                        value = AbstractPhysicalLayer.getInt(data, i + 8);
+                                        value = Utils.getInt(data, i + 8);
                                         if ((value == NaN_S32) || (value == NaN_U32)) {
                                             value = 0;
                                         }
@@ -564,9 +549,9 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             // This function gives us the time when
                                             // the inverter was switched off
                                             current.sleepTime = datetime;
-                                            current.setValue(lri, AbstractPhysicalLayer.tokW(value));
+                                            current.setValue(lri, Utils.tokW(value));
                                             current.flags |= type.getValue();
-                                            logger.debug(strkW, lri.getCode(), AbstractPhysicalLayer.tokW(value),
+                                            logger.debug(strkW, lri.getCode(), Utils.tokW(value),
                                                     datetime);
                                             break;
 
@@ -630,9 +615,9 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             if (recordsize == 0) {
                                                 recordsize = 28;
                                             }
-                                            current.setValue(lri, AbstractPhysicalLayer.toVolt(value));
+                                            current.setValue(lri, Utils.toVolt(value));
                                             current.flags |= type.getValue();
-                                            logger.debug(strVolt, lri.getCode(), AbstractPhysicalLayer.toVolt(value),
+                                            logger.debug(strVolt, lri.getCode(), Utils.toVolt(value),
                                                     datetime);
                                             break;
 
@@ -642,7 +627,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             current.iac1 = value;
                                             current.flags |= type.getValue();
-                                            logger.debug(strAmp, "SPOT_IAC1", AbstractPhysicalLayer.toAmp(value),
+                                            logger.debug(strAmp, "SPOT_IAC1", Utils.toAmp(value),
                                                     datetime);
                                             break;
 
@@ -652,7 +637,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             current.iac2 = value;
                                             current.flags |= type.getValue();
-                                            logger.debug(strAmp, "SPOT_IAC2", AbstractPhysicalLayer.toAmp(value),
+                                            logger.debug(strAmp, "SPOT_IAC2", Utils.toAmp(value),
                                                     datetime);
                                             break;
 
@@ -662,7 +647,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             current.iac3 = value;
                                             current.flags |= type.getValue();
-                                            logger.debug(strAmp, "SPOT_IAC3", AbstractPhysicalLayer.toAmp(value),
+                                            logger.debug(strAmp, "SPOT_IAC3", Utils.toAmp(value),
                                                     datetime);
                                             break;
 
@@ -673,7 +658,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             current.gridFreq = value;
                                             current.flags |= type.getValue();
                                             logger.debug("{}: {} (Hz) {}", "SPOT_FREQ",
-                                                    AbstractPhysicalLayer.toHz(value), datetime);
+                                                    Utils.toHz(value), datetime);
                                             break;
 
                                         case DcMsWatt1: // SPOT_PDC1
@@ -701,7 +686,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
 
                                             current.udc1 = value;
-                                            logger.debug(strVolt, "SPOT_UDC1", AbstractPhysicalLayer.toVolt(value),
+                                            logger.debug(strVolt, "SPOT_UDC1", Utils.toVolt(value),
                                                     datetime);
                                             current.flags |= type.getValue();
                                             break;
@@ -711,7 +696,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                                 recordsize = 28;
                                             }
                                             current.udc2 = value;
-                                            logger.debug(strVolt, "SPOT_UDC2", AbstractPhysicalLayer.toVolt(value),
+                                            logger.debug(strVolt, "SPOT_UDC2", Utils.toVolt(value),
                                                     datetime);
                                             current.flags |= type.getValue();
                                             break;
@@ -722,7 +707,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
 
                                             current.idc1 = value;
-                                            logger.debug(strAmp, "SPOT_IDC1", AbstractPhysicalLayer.toAmp(value),
+                                            logger.debug(strAmp, "SPOT_IDC1", Utils.toAmp(value),
                                                     datetime);
 
                                             current.flags |= type.getValue();
@@ -734,7 +719,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
 
                                             current.idc2 = value;
-                                            logger.debug(strAmp, "SPOT_IDC2", AbstractPhysicalLayer.toAmp(value),
+                                            logger.debug(strAmp, "SPOT_IDC2", Utils.toAmp(value),
                                                     datetime);
 
                                             current.flags |= type.getValue();
@@ -745,10 +730,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             if (recordsize == 0) {
                                                 recordsize = 16;
                                             }
-                                            current.setValue(lri, AbstractPhysicalLayer.tokWh(value64));
+                                            current.setValue(lri, Utils.tokWh(value64));
                                             current.flags |= type.getValue();
                                             logger.debug(strkWh, current + lri.getCode(),
-                                                    AbstractPhysicalLayer.tokWh(value64), datetime);
+                                                    Utils.tokWh(value64), datetime);
                                             break;
 
                                         case MeteringTotOpTms: // SPOT_OPERTM
@@ -757,7 +742,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             current.operationTime = value64;
                                             current.flags |= type.getValue();
-                                            logger.debug(strHour, "SPOT_OPERTM", AbstractPhysicalLayer.toHour(value64),
+                                            logger.debug(strHour, "SPOT_OPERTM", Utils.toHour(value64),
                                                     datetime);
                                             break;
 
@@ -767,7 +752,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             current.feedInTime = value64;
                                             current.flags |= type.getValue();
-                                            logger.debug(strHour, "SPOT_FEEDTM", AbstractPhysicalLayer.toHour(value64),
+                                            logger.debug(strHour, "SPOT_FEEDTM", Utils.toHour(value64),
                                                     datetime);
                                             break;
 
@@ -777,7 +762,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                             }
                                             // This function gives us the time when the inverter was switched on
                                             current.wakeupTime = datetime;
-                                            current.setDeviceName(AbstractPhysicalLayer.getString(data, i + 8, 32));
+                                            current.setDeviceName(Utils.getString(data, i + 8, 32));
                                             current.flags |= type.getValue();
                                             logger.debug("INV_NAME: {}   {}", current.getDeviceName(), datetime);
                                             break;
@@ -814,7 +799,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                                 recordsize = 40;
                                             }
                                             for (int idx = 8; idx < recordsize; idx += 4) {
-                                                int attribute = (int) (AbstractPhysicalLayer.getLong(data, i + idx)
+                                                int attribute = (int) (Utils.getLong(data, i + idx)
                                                         & 0x00FFFFFF);
                                                 byte status = data[i + idx + 3];
                                                 if (attribute == 0xFFFFFE) {

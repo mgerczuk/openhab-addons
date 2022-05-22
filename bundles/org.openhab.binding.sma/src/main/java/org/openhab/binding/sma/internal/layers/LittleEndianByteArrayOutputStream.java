@@ -90,6 +90,11 @@ public class LittleEndianByteArrayOutputStream extends FilterOutputStream {
         return this;
     }
 
+    public LittleEndianByteArrayOutputStream writeBytes(byte[] data) throws IOException {
+        ((DataOutputStream) out).write(data);
+        return this;
+    }
+
     // public LittleEndianByteArrayOutputStream writeChars(String s) throws IOException {
     // for (int i = 0; i < s.length(); i++) {
     // writeChar(s.charAt(i));
