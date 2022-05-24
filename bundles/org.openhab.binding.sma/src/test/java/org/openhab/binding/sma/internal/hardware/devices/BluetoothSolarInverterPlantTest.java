@@ -29,6 +29,312 @@ import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
  */
 public class BluetoothSolarInverterPlantTest {
 
+    void testGetDataOverflow() {
+        BluetoothDebug bt = new BluetoothDebug();
+        SMAPPPFrame.AppSerial = 0x3B8AC768;
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
+                new SmaBinding().createDevice("00:80:25:15:B6:06", "0000"));
+
+        bt.setCurrentTimeSeconds(0x628BAF03, 0x628BAF03);
+        bt.setTimezoneOffset(7200);
+
+        bt.addWriteData( //
+                "7E 17 00 69 00 00 00 00 00 00", //
+                "01 00 00 00 00 00 01 02 76 65", //
+                "72 0D 0A");
+
+        bt.addReadData( //
+                "7E 1F 00 61 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 02 00 00 04", //
+                "70 00 04 00 00 00 00 01 00 00", //
+                "00");
+
+        bt.addWriteData( //
+                "7E 1F 00 61 00 00 00 00 00 00", //
+                "06 B6 15 25 80 00 02 00 00 04", //
+                "70 00 04 00 00 00 00 01 00 00", //
+                "00");
+
+        bt.addReadData( //
+                "7E 1F 00 61 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 0A 00 06 B6", //
+                "15 25 80 00 01 79 B6 7E 01 5F", //
+                "E4");
+
+        bt.addReadData( //
+                "7E 14 00 6A 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 0C 00 02 00");
+
+        bt.addReadData( //
+                "7E 2A 00 54 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 05 00 06 B6", //
+                "15 25 80 00 01 01 54 2D 15 25", //
+                "80 00 01 01 79 B6 7E 01 5F E4", //
+                "02 01");
+
+        bt.addWriteData( //
+                "7E 3F 00 41 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 68 C7 8A 3B", //
+                "00 00 00 00 00 00 02 80 00 02", //
+                "00 00 00 00 00 00 00 00 00 00", //
+                "D3 95 7E");
+
+        bt.addReadData( //
+                "7E 12 00 6C 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 06 00");
+
+        bt.addReadData( //
+                "7E 30 00 4E 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 01 10 54 2D", //
+                "15 25 80 00 00 00 00 00 00 00", //
+                "00 00 00 00 00 00 00 00 00 00", //
+                "00 00 00 00 00 00 00 00");
+
+        bt.addReadData( //
+                "7E 6A 00 14 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 7D 33 90 7D 5D 00 68", //
+                "C7 8A 3B 00 00 71 00 2D 38 2F", //
+                "7D 5D 00 00 00 00 00 00 02 80", //
+                "01 02 00 00 00 00 00 00 00 00", //
+                "00 00 00 03 00 00 00 FF 00 00", //
+                "80 07 00 60 01 00 71 00 2D 38", //
+                "2F 7D 5D 00 00 0A 00 0C 00 00", //
+                "00 00 00 00 00 03 00 00 00 01", //
+                "01 00 00 BF 7A 7E");
+
+        bt.addReadData( //
+                "7E 68 00 16 54 2D 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 7D 33 80 7D 5D 00 68", //
+                "C7 8A 3B 00 00 63 00 C5 68 49", //
+                "77 00 00 00 00 00 00 02 80 01", //
+                "02 00 00 00 00 00 00 00 00 00", //
+                "00 00 03 00 00 00 FF 00 00 58", //
+                "07 00 00 01 00 63 00 C5 68 49", //
+                "77 00 00 0A 00 0C 00 00 00 00", //
+                "00 00 00 03 00 00 00 01 01 00", //
+                "00 91 66 7E");
+
+        bt.addWriteData( //
+                "7E 3B 00 45 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 08 A0 FF FF FF FF FF", //
+                "FF 00 03 7D 5D 00 68 C7 8A 3B", //
+                "00 03 00 00 00 00 03 80 0E 01", //
+                "FD FF FF FF FF FF 3B B2 7E");
+
+        bt.addWriteData( //
+                "7E 53 00 2D 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 0E A0 FF FF FF FF FF", //
+                "FF 00 01 7D 5D 00 68 C7 8A 3B", //
+                "00 01 00 00 00 00 04 80 0C 04", //
+                "FD FF 07 00 00 00 84 03 00 00", //
+                "03 AF 8B 62 00 00 00 00 B8 B8", //
+                "B8 B8 88 88 88 88 88 88 88 88", //
+                "DE AE 7E");
+
+        bt.addReadData( //
+                "7E 54 00 2A 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 0E 50 7D 5D 00 68 C7", //
+                "8A 3B 00 01 71 00 2D 38 2F 7D", //
+                "5D 00 01 00 00 00 00 04 80 0D", //
+                "04 FD FF 07 00 00 00 84 03 00", //
+                "00 03 AF 8B 62 00 00 00 00 B8", //
+                "B8 B8 B8 88 88 88 88 88 88 88", //
+                "88 06 77 7E");
+
+        bt.addReadData( //
+                "7E 47 00 39 54 2D 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 0B 80 7D 5D 00 68 C7", //
+                "8A 3B 00 01 63 00 C5 68 49 77", //
+                "00 01 00 00 00 00 04 80 0D 04", //
+                "FD FF 07 00 00 00 84 03 00 00", //
+                "03 AF 8B 62 00 00 00 00 6A 85", //
+                "7E");
+
+        bt.addWriteData( //
+                "7E 5B 00 25 79 B6 7E 01 5F E4", //
+                "06 B6 15 25 80 00 01 00 7E FF", //
+                "03 60 65 10 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 68 C7 8A 3B", //
+                "00 00 00 00 00 00 05 80 0A 02", //
+                "00 F0 00 6D 23 00 00 6D 23 00", //
+                "00 6D 23 00 03 AF 8B 62 03 AF", //
+                "8B 62 03 AF 8B 62 20 1C 00 00", //
+                "01 00 00 00 01 00 00 00 D6 AD", //
+                "7E");
+
+        bt.addWriteData( //
+                "7E 3F 00 41 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 68 C7 8A 3B", //
+                "00 00 00 00 00 00 06 80 00 02", //
+                "00 51 00 3F 26 00 FF 3F 26 00", //
+                "1C 1E 7E");
+
+        bt.addReadData( //
+                "7E 5B 00 25 54 2D 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 10 80 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 63 00 C5 68 49 77", //
+                "00 00 00 00 00 00 06 80 01 02", //
+                "00 51 00 00 00 00 00 00 00 00", //
+                "01 3F 26 40 2F AF 8B 62 41 01", //
+                "00 00 41 01 00 00 41 01 00 00", //
+                "41 01 00 00 01 00 00 00 DD 2B", //
+                "7E");
+
+        bt.addReadData( //
+                "7E 54 00 2A 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 0E 50 7D 5D 00 68 C7", //
+                "8A 3B 00 01 71 00 2D 38 2F 7D", //
+                "5D 00 01 00 00 00 00 04 80 0D", //
+                "04 FD FF 07 00 00 00 84 03 00", //
+                "00 03 AF 8B 62 00 00 00 00 B8", //
+                "B8 B8 B8 88 88 88 88 88 88 88", //
+                "88 06 77 7E");
+
+        bt.addReadData( //
+                "7E 54 00 2A 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 0E 50 7D 5D 00 68 C7", //
+                "8A 3B 00 01 71 00 2D 38 2F 7D", //
+                "5D 00 01 00 00 00 00 04 80 0D", //
+                "04 FD FF 07 00 00 00 84 03 00", //
+                "00 03 AF 8B 62 00 00 00 00 B8", //
+                "B8 B8 B8 88 88 88 88 88 88 88", //
+                "88 06 77 7E");
+
+        bt.addReadData( //
+                "7E 5E 00 20 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 10 50 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 71 00 2D 38 2F 7D", //
+                "5D 00 00 00 00 00 00 E6 A8 0A", //
+                "02 00 F0 00 00 00 00 00 00 00", //
+                "00 00 6D 23 00 83 B1 8B 62 EC", //
+                "00 D9 52 83 B1 8B 62 7D 31 0E", //
+                "00 00 30 FE 7D 5E 00 01 00 00", //
+                "00 84 FA 7E");
+
+        bt.addReadData( //
+                "7E 5E 00 20 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 10 50 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 71 00 2D 38 2F 7D", //
+                "5D 00 00 00 00 00 00 E6 A8 0A", //
+                "02 00 F0 00 00 00 00 00 00 00", //
+                "00 00 6D 23 00 83 B1 8B 62 EC", //
+                "00 D9 52 83 B1 8B 62 7D 31 0E", //
+                "00 00 30 FE 7D 5E 00 01 00 00", //
+                "00 84 FA 7E");
+
+        bt.addReadData( //
+                "7E 5E 00 20 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 10 50 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 71 00 2D 38 2F 7D", //
+                "5D 00 00 00 00 00 00 E6 A8 0A", //
+                "02 00 F0 00 00 00 00 00 00 00", //
+                "00 00 6D 23 00 83 B1 8B 62 EC", //
+                "00 D9 52 83 B1 8B 62 7D 31 0E", //
+                "00 00 30 FE 7D 5E 00 01 00 00", //
+                "00 84 FA 7E");
+
+        bt.addWriteData( //
+                "7E 3F 00 41 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 68 C7 8A 3B", //
+                "00 00 00 00 00 00 07 80 00 02", //
+                "00 51 00 48 46 00 FF 55 46 00", //
+                "71 22 7E");
+
+        bt.addReadData( //
+                "7E 6D 00 13 06 B6 15 25 80 00", // command = 8
+                "79 B6 7E 01 5F E4 08 00 7E FF", //
+                "03 60 65 33 90 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 71 00 2D 38 2F 7D", //
+                "5D 00 00 00 00 00 00 07 80 01", //
+                "02 00 51 09 00 00 00 0E 00 00", //
+                "00 01 48 46 00 C3 B1 8B 62 27", //
+                "5B 00 00 27 5B 00 00 27 5B 00", //
+                "00 27 5B 00 00 01 00 00 00 01", //
+                "49 46 00 C3 B1 8B 62 FF FF FF", //
+                "FF FF FF FF FF FF FF FF FF");
+
+        bt.addReadData( //
+                "7E 6D 00 13 06 B6 15 25 80 00", // command = 8
+                "79 B6 7E 01 5F E4 08 00 FF FF", //
+                "FF FF 01 00 00 00 01 4A 46 00", //
+                "C3 B1 8B 62 FF FF FF FF FF FF", //
+                "FF FF FF FF FF FF FF FF FF FF", //
+                "01 00 00 00 01 50 46 00 C3 B1", //
+                "8B 62 28 04 00 00 28 04 00 00", //
+                "28 04 00 00 28 04 00 00 01 00", //
+                "00 00 01 51 46 00 C3 B1 8B 62", //
+                "FF FF FF FF FF FF FF FF FF FF", //
+                "FF FF FF FF FF FF 01 00 00");
+
+        bt.addReadData( //
+                "7E 6D 00 13 54 2D 15 25 80 00", // FCS Error!?!
+                "79 B6 7E 01 5F E4 08 00 7E FF", // new PPP frame??
+                "03 60 65 17 80 7D 5D 00 68 C7", //
+                "8A 3B 00 A0 63 00 C5 68 49 77", //
+                "00 00 00 00 00 00 07 80 01 02", //
+                "00 51 04 00 00 00 05 00 00 00", //
+                "01 48 46 00 70 AF 8B 62 54 5B", //
+                "00 00 54 5B 00 00 54 5B 00 00", //
+                "54 5B 00 00 01 00 00 00 01 50", //
+                "46 00 70 AF 8B 62 80 05 00 00", //
+                "80 05 00 00 80 05 00 00 80");
+
+        bt.addReadData( //
+                "7E 32 00 4C 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 00 01", //
+                "52 46 00 C3 B1 8B 62 FF FF FF", //
+                "FF FF FF FF FF FF FF FF FF FF", //
+                "FF FF FF 01 00 00 00 5F BD 7E");
+
+        bt.addWriteData( //
+                "7E 3F 00 41 79 B6 7E 01 5F E4", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 68 C7 8A 3B", //
+                "00 00 00 00 00 00 08 80 00 02", //
+                "00 54 00 01 26 00 FF 22 26 00", //
+                "8B A7 7E");
+
+        bt.addReadData( //
+                "7E 1C 00 62 54 2D 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 05 00", //
+                "00 01 00 00 00 29 96 7E");
+
+        try {
+            plant.init(bt);
+            plant.logon(SmaUserGroup.User, "0000");
+            plant.setInverterTime();
+            plant.getInverterData(SmaDevice.InverterDataType.SpotACTotalPower);
+            plant.getInverterData(SmaDevice.InverterDataType.SpotACVoltage);
+            plant.getInverterData(SmaDevice.InverterDataType.EnergyProduction);
+            plant.getInverterData(SmaDevice.InverterDataType.MaxACPower);
+            plant.getInverterData(SmaDevice.InverterDataType.DeviceStatus);
+            plant.getInverterData(SmaDevice.InverterDataType.TypeLabel);
+            plant.getInverterData(SmaDevice.InverterDataType.SoftwareVersion);
+            plant.logoff();
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+    }
+
     @Test
     void testGetData0() {
         BluetoothDebug bt = new BluetoothDebug();
@@ -700,21 +1006,5 @@ public class BluetoothSolarInverterPlantTest {
         } catch (IOException e) {
             fail(e.getMessage());
         }
-    }
-
-    static BluetoothDebug.ReadCall[] concat(BluetoothDebug.ReadCall[]... arrays) {
-        int length = 0;
-        for (BluetoothDebug.ReadCall[] array : arrays) {
-            length += array.length;
-        }
-        BluetoothDebug.ReadCall[] result = new BluetoothDebug.ReadCall[length];
-        int pos = 0;
-        for (BluetoothDebug.ReadCall[] array : arrays) {
-            for (BluetoothDebug.ReadCall element : array) {
-                result[pos] = element;
-                pos++;
-            }
-        }
-        return result;
     }
 }

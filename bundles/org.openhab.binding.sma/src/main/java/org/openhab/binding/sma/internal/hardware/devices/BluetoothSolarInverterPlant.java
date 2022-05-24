@@ -480,7 +480,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                      * return E_CHKSUM; else
                      */
                     {
-                        short rcvpcktID = (short) (Utils.getShort(data, 27) & 0x7FFF);
+                        short rcvpcktID = (data.length < 29) ? -1 : (short) (Utils.getShort(data, 27) & 0x7FFF);
                         if (pcktID == rcvpcktID) {
 
                             SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 15), Utils.getInt(data, 17));
