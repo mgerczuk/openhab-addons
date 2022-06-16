@@ -115,7 +115,7 @@ public class Bluetooth {
         in = null;
     }
 
-    public void sendFrame(SMAFrame frame) throws IOException {
+    public void sendSMAFrame(SMAFrame frame) throws IOException {
 
         ByteArrayOutputStream temp = new ByteArrayOutputStream();
         frame.write(temp);
@@ -125,20 +125,11 @@ public class Bluetooth {
         out.write(buffer);
     }
 
-    public byte[] receive(int wait4Command) throws IOException {
-        return receive(destAddress, wait4Command);
-    }
+    public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
 
-    public byte[] receiveAll(int wait4Command) throws IOException {
-        return receive(SmaBluetoothAddress.BROADCAST, wait4Command);
-    }
-
-    protected byte[] receive(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
-
-        logger.trace("receive(...,{})", wait4Command);
+        logger.trace("receiveSMAFrame(...,{})", wait4Command);
 
         int command = 0;
-        ByteArrayOutputStream os = null;
         SMAFrame f = null;
 
         do {
@@ -156,6 +147,36 @@ public class Bluetooth {
                 currentHeaderAddress = f.getSourceAddress();
 
                 command = f.getControl();
+            }
+        } while ((command != wait4Command) && (0xFF != wait4Command));
+
+        return f;
+    }
+
+    public PPPFrame receivePPPFrame(short pktId) throws IOException {
+
+        logger.trace("receivePPPFrame({})", pktId);
+
+        PPPFrame ppp = null;
+        short rcvpcktID = -1;
+
+        do {
+            int command = 0;
+            ByteArrayOutputStream os = null;
+            SMAFrame f = null;
+
+            do {
+                f = SMAFrame.read(in);
+
+                logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
+                logger.trace("source: {}", f.getSourceAddress().toString());
+                logger.trace("destination: {}", f.getDestinationAddress().toString());
+
+                logger.trace("receiving cmd {}", f.getControl());
+
+                currentHeaderAddress = f.getSourceAddress();
+
+                command = f.getControl();
                 if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
                         SMAPPPFrame.PROTOCOL)) {
                     os = new ByteArrayOutputStream();
@@ -164,16 +185,24 @@ public class Bluetooth {
                 if (os != null) {
                     os.write(f.getPayload());
                 }
+
+            } while (command != 1);
+
+            if (os != null) {
+                ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+                ppp = PPPFrame.read(is);
             }
-        } while ((command != wait4Command) && (0xFF != wait4Command));
 
-        if (os != null) {
-            ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-            PPPFrame pf = PPPFrame.read(is);
-            return pf.getFrame(); // TODO: getPayload()
-        }
+            rcvpcktID = (ppp == null || ppp.payload.length < 24) ? -1
+                    : (short) (Utils.getShort(ppp.payload, 22) & 0x7FFF);
 
-        return f.getFrame(); // TODO: getPayload()
+            if (ppp != null) {
+                logger.trace("rcvpcktID id {}", rcvpcktID);
+            }
+
+        } while (rcvpcktID != pktId);
+
+        return ppp;
     }
 
     public int currentTimeSeconds() {

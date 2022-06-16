@@ -57,7 +57,7 @@ public class BluetoothDebug extends Bluetooth {
         }
     }
 
-    private byte[] stringToBytes(String data) {
+    public static byte[] stringToBytes(String data) {
         String[] digits = data.split("\\s+");
         byte[] result = new byte[digits.length];
         for (int i = 0; i < digits.length; i++) {

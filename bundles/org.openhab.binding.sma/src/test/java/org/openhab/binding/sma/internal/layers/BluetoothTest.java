@@ -18,7 +18,6 @@ import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
-import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 
 /**
  * @author Martin Gerczuk - Initial contribution
@@ -28,36 +27,32 @@ public class BluetoothTest {
     @Test
     void testReceive1() {
 
-        BluetoothDebug.ReadCall[] read = new BluetoothDebug.ReadCall[] {
-                new BluetoothDebug.ReadCall(18,
-                        new byte[] { 0x7E, 0x5E, 0x00, 0x20, 0x06, (byte) 0xB6, 0x15, 0x25, (byte) 0x80, 0x00, 0x79,
-                                (byte) 0xB6, 0x7E, 0x01, 0x5F, (byte) 0xE4, 0x01, 0x00 }),
-                new BluetoothDebug.ReadCall(76,
-                        new byte[] { 0x7E, (byte) 0xFF, 0x03, 0x60, 0x65, 0x10, 0x50, 0x7D, 0x5D, 0x00, (byte) 0x85,
-                                (byte) 0x81, 0x14, 0x36, 0x00, (byte) 0xA0, 0x71, 0x00, 0x2D, 0x38, 0x2F, 0x7D, 0x5D,
-                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0x97, (byte) 0xE5, 0x0A, 0x02, 0x00,
-                                (byte) 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6D, 0x23, 0x00,
-                                0x51, 0x4C, (byte) 0x87, 0x62, (byte) 0xEC, 0x00, (byte) 0xD9, 0x52, 0x51, 0x4C,
-                                (byte) 0x87, 0x62, 0x7D, 0x31, 0x0E, 0x00, 0x00, 0x30, (byte) 0xFE, 0x7D, 0x5E, 0x00,
-                                0x01, 0x00, 0x00, 0x00, (byte) 0xEE, 0x4F, 0x7E }) };
-
-        byte[] expected = new byte[] { 0x7E, (byte) 0xFF, 0x03, 0x60, 0x65, 0x10, 0x50, 0x7D, 0x00, (byte) 0x85,
-                (byte) 0x81, 0x14, 0x36, 0x00, (byte) 0xA0, 0x71, 0x00, 0x2D, 0x38, 0x2F, 0x7D, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, (byte) 0x97, (byte) 0xE5, 0x0A, 0x02, 0x00, (byte) 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x6D, 0x23, 0x00, 0x51, 0x4C, (byte) 0x87, 0x62, (byte) 0xEC, 0x00, (byte) 0xD9, 0x52,
-                0x51, 0x4C, (byte) 0x87, 0x62, 0x11, 0x0E, 0x00, 0x00, 0x30, (byte) 0xFE, 0x7E, 0x00, 0x01, 0x00, 0x00,
-                0x00, (byte) 0xEE, 0x4F, 0x7E };
-
         BluetoothDebug bt = new BluetoothDebug();
-        bt.setDebugData(read, null);
-        SmaBluetoothAddress destAddress = new SmaBluetoothAddress("00:80:25:15:B6:06");
-        int wait4Command = 1;
 
+        bt.addReadData("7E 6A 00 14 06 B6 15 25 80 00", //
+                "79 B6 7E 01 5F E4 01 00 7E FF", //
+                "03 60 65 7D 33 90 7D 5D 00 35", //
+                "DB C6 38 00 00 71 00 2D 38 2F", //
+                "7D 5D 00 00 00 00 00 00 02 80", //
+                "01 02 00 00 00 00 00 00 00 00", //
+                "00 00 00 03 00 00 00 FF 00 00", //
+                "80 07 00 60 01 00 71 00 2D 38", //
+                "2F 7D 5D 00 00 0A 00 0C 00 00", //
+                "00 00 00 00 00 03 00 00 00 01", //
+                "01 00 00 5B 55 7E");
+        byte[] expected = BluetoothDebug.stringToBytes("13 90 7D 00 35 DB C6 38 00 00 " + //
+                "71 00 2D 38 2F 7D 00 00 00 00 " + //
+                "00 00 02 80 01 02 00 00 00 00 " + //
+                "00 00 00 00 00 00 00 03 00 00 " + //
+                "00 FF 00 00 80 07 00 60 01 00 " + //
+                "71 00 2D 38 2F 7D 00 00 0A 00 " + //
+                "0C 00 00 00 00 00 00 00 03 00 " + //
+                "00 00 01 01 00 00");
         try {
             bt.open();
-            byte[] result = bt.receive(destAddress, wait4Command);
+            PPPFrame frame = bt.receivePPPFrame((short) 2);
 
-            assertTrue(Arrays.areEqual(expected, Arrays.copyOf(result, expected.length)));
+            assertTrue(Arrays.areEqual(expected, frame.getPayload()));
         } catch (IOException e) {
             fail(e.getMessage());
         }
@@ -106,14 +101,11 @@ public class BluetoothTest {
 
         BluetoothDebug bt = new BluetoothDebug();
         bt.setDebugData(read, null);
-        SmaBluetoothAddress destAddress = new SmaBluetoothAddress("00:80:25:15:B6:06");
-        int wait4Command = 1;
-
         try {
             bt.open();
-            byte[] result = bt.receive(destAddress, wait4Command);
+            PPPFrame frame = bt.receivePPPFrame((short) 11);
 
-            assertArrayEquals(expected, Arrays.copyOf(result, expected.length));
+            assertArrayEquals(expected, frame.getFrame());
         } catch (IOException e) {
             fail(e.getMessage());
         }
