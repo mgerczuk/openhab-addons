@@ -25,11 +25,11 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 public class SMAFrame {
 
     // length of package header
-    public static final int HEADERLENGTH = 18;
+    private static final int HEADERLENGTH = 18;
 
-    int control;
-    SmaBluetoothAddress sourceAddress;
-    SmaBluetoothAddress destinationAddress;
+    private int control;
+    private SmaBluetoothAddress sourceAddress;
+    private SmaBluetoothAddress destinationAddress;
 
     byte[] payload;
 

@@ -18,6 +18,10 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 
 /**
+ * Stream for writing little-endian encoded binary data.
+ *
+ * The methods are similar to java.io.DataOutput but allow method chaining.
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 public class LittleEndianByteArrayOutputStream extends FilterOutputStream {

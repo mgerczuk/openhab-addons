@@ -19,6 +19,8 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
+ * InputStream with read timeout
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault

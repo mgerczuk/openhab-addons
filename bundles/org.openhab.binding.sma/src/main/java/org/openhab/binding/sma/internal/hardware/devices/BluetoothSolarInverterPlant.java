@@ -73,13 +73,13 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         }
 
         SmaBluetoothAddress localDeviceAdress = new SmaBluetoothAddress();
-        rootDeviceAdress = layer.destAddress;
+        rootDeviceAdress = layer.getDestAddress();
 
         int attempts = 0;
         boolean connected = false;
         while (!connected) {
             try {
-                logger.debug("Connecting to {} ({}/{})\n", layer.destAddress, attempts + 1, connectRetries);
+                logger.debug("Connecting to {} ({}/{})\n", layer.getDestAddress(), attempts + 1, connectRetries);
                 layer.open();
                 connected = true;
             } catch (Exception e1) {
@@ -92,7 +92,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
         try {
             // query SMA Net ID
-            layer.sendSMAFrame(new SMAFrame(0x0201, layer.localAddress,
+            layer.sendSMAFrame(new SMAFrame(0x0201, layer.getLocalAddress(),
                     new SmaBluetoothAddress(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }), //
                     new LittleEndianByteArrayOutputStream()//
                             .writeBytes("ver\r\n")//
@@ -104,7 +104,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             logger.debug("SMA netID = {}\n", netID);
 
             // check root device Address
-            layer.sendSMAFrame(new SMAFrame(0x02, layer.localAddress, layer.destAddress, //
+            layer.sendSMAFrame(new SMAFrame(0x02, layer.getLocalAddress(), layer.getDestAddress(), //
                     new LittleEndianByteArrayOutputStream()//
                             .writeInt(0x00700400)//
                             .writeByte((byte) netID)//
@@ -119,13 +119,13 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             // If Root Device has changed, copy the new address
             if (data[6] == 2) {
                 rootDeviceAdress.setAddress(data, 0);
-                layer.destAddress = rootDeviceAdress;
+                layer.setDestAddress(rootDeviceAdress);
             }
             logger.debug("Root device address: {}", rootDeviceAdress);
 
             // Get local BT address
             localDeviceAdress.setAddress(data, 7);
-            layer.localAddress = localDeviceAdress;
+            layer.setLocalAddress(localDeviceAdress);
             logger.debug("Local BT address: {}", localDeviceAdress);
 
             frame = layer.receiveSMAFrame(0x05);
@@ -158,20 +158,20 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             if ((inverters.size() == 1) && (netID > 1)) {
                 // We need more handshake 03/04 commands to initialise network
                 // connection between inverters
-                layer.sendSMAFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new LittleEndianByteArrayOutputStream()//
                                 .writeShort((short) 0x000A)//
                                 .writeByte((byte) 0xAC)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
-                layer.sendSMAFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new LittleEndianByteArrayOutputStream()//
                                 .writeShort((short) 0x0002)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
-                layer.sendSMAFrame(new SMAFrame(0x03, layer.localAddress, layer.destAddress, //
+                layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new LittleEndianByteArrayOutputStream()//
                                 .writeShort((short) 0x0001)//
                                 .writeByte((byte) 0x01)//
@@ -276,10 +276,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             }
 
             // Send broadcast request for identification
-            layer.sendSMAFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+            layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, Utils.ANYSUSYID, Utils.ANYSERIAL,
-                                    ++pcktID) //
+                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, SMAPPPFrame.ANYSUSYID,
+                                    SMAPPPFrame.ANYSERIAL, ++pcktID) //
                             .writeInt(0x00000200)//
                             .writeInt(0x0)//
                             .writeInt(0x0)//
@@ -291,7 +291,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             for (int i = 0; i < inverters.size(); i++) {
                 PPPFrame pppFrame = layer.receivePPPFrame(pcktID);
                 data = pppFrame.getPayload();
-                address = layer.getHeaderAddress();
+                address = pppFrame.getFrameSourceAddress();
 
                 BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
                 if (current != null) {
@@ -348,10 +348,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
             now = layer.currentTimeSeconds();
 
-            layer.sendSMAFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+            layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, Utils.ANYSUSYID, Utils.ANYSERIAL,
-                                    ++pcktID)//
+                            .writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, SMAPPPFrame.ANYSUSYID,
+                                    SMAPPPFrame.ANYSERIAL, ++pcktID)//
                             .writeInt(0xFFFD040C)//
                             .writeInt(userGroup.getValue()) // User / Installer
                             .writeInt(0x00000384) // Timeout = 900sec ?
@@ -366,7 +366,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 for (int i = 0; i < inverters.size(); i++) {
                     PPPFrame frame = layer.receivePPPFrame(pcktID);
                     byte[] data = frame.getPayload();
-                    SmaBluetoothAddress address = layer.getHeaderAddress();
+                    SmaBluetoothAddress address = frame.getFrameSourceAddress();
 
                     if (/* (pcktID == rcvpcktID) && */ (Utils.getInt(data, 36) == now)) {
                         BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
@@ -390,10 +390,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     public void logoff() throws IOException {
         logger.debug("logoff SMA Inverter");
         try {
-            layer.sendSMAFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+            layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, Utils.ANYSUSYID, Utils.ANYSERIAL,
-                                    ++pcktID) //
+                            .writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, SMAPPPFrame.ANYSUSYID,
+                                    SMAPPPFrame.ANYSERIAL, ++pcktID) //
                             .writeInt(0xFFFD010E)//
                             .writeInt(0xFFFFFFFF)//
                             .toPPPFrame()));
@@ -413,10 +413,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             logger.debug("TZ offset (s): {}", tzOffset);
 
             pcktID++;
-            layer.sendSMAFrame(new SMAFrame(0x01, layer.localAddress, rootDeviceAdress, //
+            layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), rootDeviceAdress, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, Utils.ANYSUSYID, Utils.ANYSERIAL,
-                                    pcktID)//
+                            .writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, SMAPPPFrame.ANYSUSYID,
+                                    SMAPPPFrame.ANYSERIAL, pcktID)//
                             .writeInt(0xF000020A)//
                             .writeInt(0x00236D00)//
                             .writeInt(0x00236D00)//
@@ -464,10 +464,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         try {
             // layer.open();
 
-            layer.sendSMAFrame(new SMAFrame(0x01, layer.localAddress, SmaBluetoothAddress.BROADCAST, //
+            layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
-                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, Utils.ANYSUSYID, Utils.ANYSERIAL,
-                                    ++pcktID)//
+                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, SMAPPPFrame.ANYSUSYID,
+                                    SMAPPPFrame.ANYSERIAL, ++pcktID)//
                             .writeInt(command)//
                             .writeInt(first)//
                             .writeInt(last)//

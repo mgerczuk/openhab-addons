@@ -18,10 +18,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * PPP frame
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 public class PPPFrame {
@@ -38,6 +41,8 @@ public class PPPFrame {
     private short protocol;
 
     byte[] payload;
+
+    private SmaBluetoothAddress frameSourceAddress;
 
     public PPPFrame(byte address, byte control, short protocol, byte[] payload) {
         this.address = address;
@@ -60,6 +65,14 @@ public class PPPFrame {
 
     public byte[] getPayload() {
         return payload;
+    }
+
+    public SmaBluetoothAddress getFrameSourceAddress() {
+        return frameSourceAddress;
+    }
+
+    public void setFrameSourceAddress(SmaBluetoothAddress currentHeaderAddress) {
+        this.frameSourceAddress = currentHeaderAddress;
     }
 
     public byte[] getFrame() {

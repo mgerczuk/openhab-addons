@@ -24,10 +24,13 @@ public class SMAPPPFrame {
     public static final short PROTOCOL = 0x6065;
 
     // Generate a Serial Number for application
-    public final static short AppSUSyID = 125;
+    public static final short AppSUSyID = 125;
     public static int AppSerial = generateAppSerial();
 
-    public static int generateAppSerial() {
+    public static final short ANYSUSYID = (short) 0xFFFF;
+    public static final int ANYSERIAL = 0xFFFFFFFF;
+
+    private static int generateAppSerial() {
         Random randomGenerator = new Random();
         return 900000000 + randomGenerator.nextInt(100000000);
     }

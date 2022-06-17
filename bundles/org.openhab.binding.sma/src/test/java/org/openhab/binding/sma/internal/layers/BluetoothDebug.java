@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import javax.microedition.io.StreamConnection;
 
+import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ public class BluetoothDebug extends Bluetooth {
     private StreamConnectionDebug connectionDebug = new StreamConnectionDebug();
 
     public BluetoothDebug() {
-        super("00802515B606");
+        super(new SmaBluetoothAddress("00802515B606", 1));
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.openhab.binding.sma.internal.SmaBinding;
 import org.openhab.binding.sma.internal.SmaBridgeConfiguration;
 import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
+import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterDataType;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
@@ -262,7 +263,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     private void getData(SmaBridgeConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
 
-        inverter.init(new Bluetooth(config.btAddress));
+        inverter.init(new Bluetooth(new SmaBluetoothAddress(config.btAddress, 1)));
         inverter.logon(SmaUserGroup.User, config.userPassword);
         inverter.setInverterTime();
 

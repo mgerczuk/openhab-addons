@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Read/write frames from/to Bluetooth connection
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 public class Bluetooth {
@@ -36,9 +38,8 @@ public class Bluetooth {
 
     private static final long READ_TIMEOUT_MILLIS = 15000;
 
-    // stores address in low endian
-    public SmaBluetoothAddress localAddress = new SmaBluetoothAddress();
-    public SmaBluetoothAddress destAddress;
+    private SmaBluetoothAddress localAddress = new SmaBluetoothAddress();
+    private SmaBluetoothAddress destAddress;
 
     protected static StreamConnection connection;
     protected static DataOutputStream out;
@@ -50,33 +51,24 @@ public class Bluetooth {
         this.destAddress = destAdress;
     }
 
-    public Bluetooth(String destAd) {
-        this(destAd, 1);
+    public SmaBluetoothAddress getLocalAddress() {
+        return localAddress;
     }
 
-    public Bluetooth(String destAdr, int port) {
-        super();
-
-        this.destAddress = new SmaBluetoothAddress(destAdr, port);
+    public void setLocalAddress(SmaBluetoothAddress localAddress) {
+        this.localAddress = localAddress;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
+    public SmaBluetoothAddress getDestAddress() {
+        return destAddress;
+    }
 
-        if (connection != null) {
-            logger.error("Bluetooth({}).finalize(): resource leak!", System.identityHashCode(this));
-        }
+    public void setDestAddress(SmaBluetoothAddress destAddress) {
+        this.destAddress = destAddress;
     }
 
     protected StreamConnection getConnection() throws IOException {
         return (StreamConnection) Connector.open(destAddress.getConnectorString());
-    }
-
-    private SmaBluetoothAddress currentHeaderAddress; // TODO: get rid of hack!
-
-    public SmaBluetoothAddress getHeaderAddress() {
-        return currentHeaderAddress;
     }
 
     public boolean isOpen() {
@@ -144,8 +136,6 @@ public class Bluetooth {
 
                 logger.trace("receiving cmd {}", f.getControl());
 
-                currentHeaderAddress = f.getSourceAddress();
-
                 command = f.getControl();
             }
         } while ((command != wait4Command) && (0xFF != wait4Command));
@@ -159,6 +149,7 @@ public class Bluetooth {
 
         PPPFrame ppp = null;
         short rcvpcktID = -1;
+        SmaBluetoothAddress lastSourceAddress;
 
         do {
             int command = 0;
@@ -174,7 +165,7 @@ public class Bluetooth {
 
                 logger.trace("receiving cmd {}", f.getControl());
 
-                currentHeaderAddress = f.getSourceAddress();
+                lastSourceAddress = f.getSourceAddress();
 
                 command = f.getControl();
                 if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
@@ -191,6 +182,7 @@ public class Bluetooth {
             if (os != null) {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
                 ppp = PPPFrame.read(is);
+                ppp.setFrameSourceAddress(lastSourceAddress);
             }
 
             rcvpcktID = (ppp == null || ppp.payload.length < 24) ? -1
@@ -205,10 +197,12 @@ public class Bluetooth {
         return ppp;
     }
 
+    // TODO: find better place
     public int currentTimeSeconds() {
         return (int) (System.currentTimeMillis() / 1000);
     }
 
+    // TODO: find better place
     public int getTimezoneOffset() {
         TimeZone timeZone = TimeZone.getDefault();
         return timeZone.getOffset(new Date().getTime()) / 1000;

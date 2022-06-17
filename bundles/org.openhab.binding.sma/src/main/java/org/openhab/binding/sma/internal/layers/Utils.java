@@ -17,9 +17,6 @@ package org.openhab.binding.sma.internal.layers;
  */
 public class Utils {
 
-    public static final short ANYSUSYID = (short) 0xFFFF;
-    public static final int ANYSERIAL = 0xFFFFFFFF;
-
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     public static String bytesToHex(byte[] bytes) {

@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
+ * Stream writing HDLC data
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 public class EscapeOutputStream extends FilterOutputStream {
