@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.smartmeter.connectors;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
@@ -166,5 +167,11 @@ public abstract class ConnectorBase<T> implements IMeterReaderConnector<T> {
      */
     public String getPortName() {
         return portName;
+    }
+
+    public String getCanonicalPortName() throws IOException {
+        String canonicalPath = new File(portName).getCanonicalPath();
+        logger.debug("canonicalPath of '{}' is '{}'", portName, canonicalPath);
+        return canonicalPath;
     }
 }

@@ -117,7 +117,7 @@ public class Iec62056_21SerialConnector extends ConnectorBase<DataMessage> {
 
     @Override
     public void openConnection() throws IOException {
-        Builder iec21Builder = new Iec21Port.Builder(getPortName());
+        Builder iec21Builder = new Iec21Port.Builder(getCanonicalPortName());
         if (Baudrate.fromBaudrate(this.baudrate) != Baudrate.AUTO) {
             iec21Builder.setInitialBaudrate(this.baudrate);
         }

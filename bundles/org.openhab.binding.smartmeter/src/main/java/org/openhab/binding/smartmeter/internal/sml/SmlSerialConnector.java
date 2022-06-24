@@ -104,7 +104,7 @@ public final class SmlSerialConnector extends ConnectorBase<SmlFile> {
     @Override
     public void openConnection() throws IOException {
         closeConnection();
-        SerialPortIdentifier id = serialManagerSupplier.get().getIdentifier(getPortName());
+        SerialPortIdentifier id = serialManagerSupplier.get().getIdentifier(getCanonicalPortName());
         if (id != null) {
             try {
                 serialPort = id.open("meterreaderbinding", 0);
