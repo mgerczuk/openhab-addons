@@ -12,15 +12,10 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
-import java.util.Random;
-
 /**
  * @author Martin Gerczuk - Initial contribution
  */
-public abstract class AbstractPhysicalLayer {
-
-    public static final short ANYSUSYID = (short) 0xFFFF;
-    public static final int ANYSERIAL = 0xFFFFFFFF;
+public class Utils {
 
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
@@ -87,13 +82,12 @@ public abstract class AbstractPhysicalLayer {
     }
 
     public static int getInt(byte[] buffer, int i) {
-        return ((AbstractPhysicalLayer.getShort(buffer, i + 2) << 16) & 0xffff0000)
-                | (AbstractPhysicalLayer.getShort(buffer, i) & 0xffff);
+        return ((Utils.getShort(buffer, i + 2) << 16) & 0xffff0000) | (Utils.getShort(buffer, i) & 0xffff);
     }
 
     public static long getLong(byte[] buffer, int i) {
-        return (((long) AbstractPhysicalLayer.getInt(buffer, i + 4) << 32) & 0xffffffff00000000l)
-                | (AbstractPhysicalLayer.getInt(buffer, i) & 0xffffffffl);
+        return (((long) Utils.getInt(buffer, i + 4) << 32) & 0xffffffff00000000l)
+                | (Utils.getInt(buffer, i) & 0xffffffffl);
     }
 
     public static String getString(byte[] buffer, int i, int length) {
@@ -131,42 +125,5 @@ public abstract class AbstractPhysicalLayer {
 
     public static float toTemp(long value) {
         return (float) value / 100;
-    }
-
-    protected byte[] buffer = new byte[520];
-    protected int packetposition = 0;
-
-    // Generate a Serial Number for application
-    protected short AppSUSyID = 125;
-    protected int AppSerial;
-
-    public AbstractPhysicalLayer() {
-        super();
-        Random randomGenerator = new Random();
-        AppSerial = 900000000 + randomGenerator.nextInt(100000000);
-    }
-
-    public void write(int v) {
-        writeByte((byte) ((v >>> 0) & 0xFF));
-        writeByte((byte) ((v >>> 8) & 0xFF));
-        writeByte((byte) ((v >>> 16) & 0xFF));
-        writeByte((byte) ((v >>> 24) & 0xFF));
-    }
-
-    public abstract void writeByte(byte v);
-
-    public void writeShort(short v) {
-        writeByte((byte) ((v >>> 0) & 0xFF));
-        writeByte((byte) ((v >>> 8) & 0xFF));
-    }
-
-    public void write(final byte[] bytes, int count) {
-        for (int i = 0; i < count; i++) {
-            writeByte(bytes[i]);
-        }
-    }
-
-    public boolean isCrcValid() {
-        return true;
     }
 }

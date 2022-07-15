@@ -15,6 +15,8 @@ package org.openhab.binding.sma.internal.layers;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
+ * Calculate PPP frame check sequence (CRC)
+ *
  * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault

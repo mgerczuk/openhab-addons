@@ -27,6 +27,7 @@ import org.openhab.binding.sma.internal.SmaBinding;
 import org.openhab.binding.sma.internal.SmaBridgeConfiguration;
 import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
+import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterDataType;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
@@ -147,7 +148,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             logger.trace("*******************");
 
             ArrayList<BluetoothSolarInverterPlant.Data> inverters = plant.getInverters();
-            logger.debug("{} inverters found:", inverters.size());
+            logger.trace("{} inverters found:", inverters.size());
             // for (int inv = 0; inverters.[inv] != null && inv < Inverters.length; inv++) {
             boolean complete = true;
             for (BluetoothSolarInverterPlant.Data inv : inverters) {
@@ -155,7 +156,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 discoveryService.notifyDiscovery(inv.getSerial().suSyID,
                         inv.getDeviceType() + " " + inv.getDeviceName());
 
-                logger.debug("attachedThings = {}", attachedThingsCopy.toString());
+                logger.trace("attachedThings = {}", attachedThingsCopy.toString());
                 SmaHandler handler = attachedThingsCopy.get(new Integer(inv.getSerial().suSyID));
                 if (handler != null) {
                     handler.dataReceived(inv);
@@ -262,7 +263,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     private void getData(SmaBridgeConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
 
-        inverter.init(new Bluetooth(config.btAddress));
+        inverter.init(new Bluetooth(new SmaBluetoothAddress(config.btAddress, 1)));
         inverter.logon(SmaUserGroup.User, config.userPassword);
         inverter.setInverterTime();
 

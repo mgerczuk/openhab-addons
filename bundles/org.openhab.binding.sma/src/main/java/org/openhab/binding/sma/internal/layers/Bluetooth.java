@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,34 +28,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Read/write frames from/to Bluetooth connection
+ *
  * @author Martin Gerczuk - Initial contribution
  */
-public class Bluetooth extends AbstractPhysicalLayer {
+public class Bluetooth {
 
     private static final Logger logger = LoggerFactory.getLogger(Bluetooth.class);
 
     private static final long READ_TIMEOUT_MILLIS = 15000;
 
-    private static final int HDLC_ESC = 0x7d;
-
-    private static final int HDLC_SYNC = 0x7e;
-
-    // length of package header
-    public static final int HEADERLENGTH = 18;
-
-    protected static final int L2SIGNATURE = 0x656003FF;
-
-    // stores address in low endian
-    public SmaBluetoothAddress localAddress = new SmaBluetoothAddress();
-    public SmaBluetoothAddress destAddress;
-
-    CRC crc = new CRC();
+    private SmaBluetoothAddress localAddress = new SmaBluetoothAddress();
+    private SmaBluetoothAddress destAddress;
 
     protected static StreamConnection connection;
     protected static DataOutputStream out;
     protected static InputStream in;
-
-    private byte[] commBuf;
 
     public Bluetooth(SmaBluetoothAddress destAdress) {
         super();
@@ -61,27 +51,24 @@ public class Bluetooth extends AbstractPhysicalLayer {
         this.destAddress = destAdress;
     }
 
-    public Bluetooth(String destAd) {
-        this(destAd, 1);
+    public SmaBluetoothAddress getLocalAddress() {
+        return localAddress;
     }
 
-    public Bluetooth(String destAdr, int port) {
-        super();
-
-        this.destAddress = new SmaBluetoothAddress(destAdr, port);
+    public void setLocalAddress(SmaBluetoothAddress localAddress) {
+        this.localAddress = localAddress;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-
-        if (connection != null) {
-            logger.error("Bluetooth({}).finalize(): resource leak!", System.identityHashCode(this));
-        }
+    public SmaBluetoothAddress getDestAddress() {
+        return destAddress;
     }
 
-    public SmaBluetoothAddress getHeaderAddress() {
-        return new SmaBluetoothAddress(commBuf, 4);
+    public void setDestAddress(SmaBluetoothAddress destAddress) {
+        this.destAddress = destAddress;
+    }
+
+    protected StreamConnection getConnection() throws IOException {
+        return (StreamConnection) Connector.open(destAddress.getConnectorString());
     }
 
     public boolean isOpen() {
@@ -94,7 +81,7 @@ public class Bluetooth extends AbstractPhysicalLayer {
         if (connection == null) {
             logger.debug("Bluetooth({}).open()", System.identityHashCode(this));
 
-            connection = (StreamConnection) Connector.open(destAddress.getConnectorString());
+            connection = getConnection();
 
             out = connection.openDataOutputStream();
             in = new TimeoutInputStream(connection.openDataInputStream(), READ_TIMEOUT_MILLIS);
@@ -120,209 +107,102 @@ public class Bluetooth extends AbstractPhysicalLayer {
         in = null;
     }
 
-    @Override
-    public void writeByte(byte v) {
-        // Keep a rolling checksum over the payload
-        crc.writeByte(v);
+    public void sendSMAFrame(SMAFrame frame) throws IOException {
 
-        if (v == HDLC_ESC || v == HDLC_SYNC || v == 0x11 || v == 0x12 || v == 0x13) {
-            buffer[packetposition++] = HDLC_ESC;
-            buffer[packetposition++] = (byte) (v ^ 0x20);
-        } else {
-            buffer[packetposition++] = v;
-        }
+        ByteArrayOutputStream temp = new ByteArrayOutputStream();
+        frame.write(temp);
+        byte[] buffer = temp.toByteArray();
+
+        logger.trace("Sending {} bytes:\n{}", buffer.length, Utils.bytesToHex(buffer));
+        out.write(buffer);
     }
 
-    public void writePppHeader(byte longwords, byte ctrl, short ctrl2, short dstSUSyID, int dstSerial, short pcktID) {
-        buffer[packetposition++] = HDLC_SYNC; // Not included in checksum
-        write(L2SIGNATURE);
-        writeByte(longwords);
-        writeByte(ctrl);
-        writeShort(dstSUSyID);
-        write(dstSerial);
-        writeShort(ctrl2);
-        writeShort(AppSUSyID);
-        write(AppSerial);
-        writeShort(ctrl2);
-        writeShort((short) 0);
-        writeShort((short) 0);
-        writeShort((short) (pcktID | 0x8000));
-    }
+    public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
 
-    public void writePppTrailer() {
-        short FCSChecksum = crc.get();
-        buffer[packetposition++] = (byte) (FCSChecksum & 0x00FF);
-        buffer[packetposition++] = (byte) (((FCSChecksum & 0xFF00) >>> 8) & 0x00FF);
-        buffer[packetposition++] = HDLC_SYNC; // Trailing byte
-    }
+        logger.trace("receiveSMAFrame(...,{})", wait4Command);
 
-    public void writePacketHeader(int control) {
-        this.writePacketHeader(control, this.destAddress);
-    }
-
-    public void writePacketHeader(int control, SmaBluetoothAddress destaddress) {
-        packetposition = 0;
-        crc.reset();
-
-        buffer[packetposition++] = HDLC_SYNC;
-        buffer[packetposition++] = 0; // placeholder for len1
-        buffer[packetposition++] = 0; // placeholder for len2
-        buffer[packetposition++] = 0; // placeholder for checksum
-
-        int i;
-        for (i = 0; i < 6; i++) {
-            buffer[packetposition++] = localAddress.get(i);
-        }
-
-        for (i = 0; i < 6; i++) {
-            buffer[packetposition++] = destaddress.get(i);
-        }
-
-        buffer[packetposition++] = (byte) (control & 0xFF);
-        buffer[packetposition++] = (byte) (control >>> 8);
-    }
-
-    public void writePacketLength() {
-        buffer[1] = (byte) (packetposition & 0xFF); // Lo-Byte
-        buffer[2] = (byte) ((packetposition >>> 8) & 0xFF); // Hi-Byte
-        buffer[3] = (byte) (buffer[0] ^ buffer[1] ^ buffer[2]); // checksum
-    }
-
-    public void send() throws IOException {
-        writePacketLength();
-        logger.trace("Sending {} bytes:\n{}", packetposition, bytesToHex(buffer, packetposition, ' '));
-        out.write(buffer, 0, packetposition);
-    }
-
-    public byte[] receive(int wait4Command) throws IOException {
-        return receive(destAddress, wait4Command);
-    }
-
-    public byte[] receiveAll(int wait4Command) throws IOException {
-        return receive(SmaBluetoothAddress.BROADCAST, wait4Command);
-    }
-
-    protected byte[] receive(SmaBluetoothAddress destAddress, int wait4Command) throws IOException {
-        SmaBluetoothAddress sourceAddr = new SmaBluetoothAddress();
-        SmaBluetoothAddress destinationAddr = new SmaBluetoothAddress();
-        commBuf = null;
-
-        logger.trace("getPacket({})", wait4Command);
-
-        int index = 0;
-        int hasL2pckt = 0;
-
-        int rc = 0;
         int command = 0;
-        int bib = 0;
-        final byte[] data = new byte[1024];
+        SMAFrame f = null;
 
         do {
-            commBuf = new byte[1024];
-            bib = read(commBuf, 0, HEADERLENGTH);
+            f = SMAFrame.read(in);
 
-            // int SOP = data[0];
-            // data are in litle endian. getUnsignedShort exact big endian
-            int pkLength = AbstractPhysicalLayer.getShort(commBuf, 1);
-            // int pkChecksum = data[3];
+            logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
 
-            sourceAddr.setAddress(commBuf, 4);
-            destinationAddr.setAddress(commBuf, 10);
+            if (destAddress.equals(f.getSourceAddress())) {
 
-            command = AbstractPhysicalLayer.getShort(commBuf, 16);
+                logger.trace("source: {}", f.getSourceAddress().toString());
+                logger.trace("destination: {}", f.getDestinationAddress().toString());
 
-            if (pkLength > HEADERLENGTH) {
-                // data = new byte[pkLength - HEADERLENGTH];
-                bib += read(commBuf, HEADERLENGTH, pkLength - HEADERLENGTH);
+                logger.trace("receiving cmd {}", f.getControl());
 
-                logger.trace("data received: \n{}", bytesToHex(commBuf, pkLength));
-                // Check if data is coming from the right inverter
-                if (destAddress.equals(sourceAddr)) {
-                    rc = 0;
-                    logger.trace("source: {}", sourceAddr.toString());
-                    logger.trace("destination: {}", destinationAddr.toString());
-
-                    logger.trace("receiving cmd {}", command);
-
-                    if ((hasL2pckt == 0) && commBuf[18] == (byte) HDLC_SYNC && commBuf[19] == (byte) 0xff
-                            && commBuf[20] == (byte) 0x03 && commBuf[21] == (byte) 0x60 && commBuf[22] == (byte) 0x65) // 0x656003FF7E
-                    {
-                        hasL2pckt = 1;
-                    }
-
-                    if (hasL2pckt == 1) {
-                        // Copy CommBuf to packetbuffer
-                        boolean escNext = false;
-
-                        logger.trace("PacketLength={}", pkLength);
-
-                        for (int i = HEADERLENGTH; i < pkLength; i++) {
-                            data[index] = commBuf[i];
-                            // Keep 1st byte raw unescaped HDLC_SYNC
-                            if (escNext == true) {
-                                data[index] ^= 0x20;
-                                escNext = false;
-                                index++;
-                            } else {
-                                if (data[index] == HDLC_ESC) {
-                                    escNext = true; // Throw away the HDLC_ESC byte
-                                } else {
-                                    index++;
-                                }
-                            }
-                            if (index >= 520) {
-                                logger.warn("Warning: pcktBuf buffer overflow! ({})\n", index);
-                                throw new ArrayIndexOutOfBoundsException();
-                            }
-                        }
-
-                        bib = index;
-
-                        // logger.debug("data decoded: \n{}", bytesToHex(data, data.length));
-                    } else {
-                        System.arraycopy(commBuf, 0, data, 0, bib);
-                    }
-                } // isValidSender()
-                else {
-                    rc = -1; // E_RETRY;
-                    logger.debug("Wrong sender: {}", sourceAddr);
-                    throw new IOException(String.format("Wrong sender: %s", sourceAddr));
-                }
-
-            } else {
-                // Check if data is coming from the right inverter
-                if (destAddress.equals(sourceAddr)) {
-                    bib = commBuf.length;
-                    System.arraycopy(commBuf, 0, data, 0, commBuf.length);
-                } else {
-                    rc = -1; // E_RETRY;
-                    logger.debug("Wrong sender: {}", sourceAddr);
-                    throw new IOException(String.format("Wrong sender: %s", sourceAddr));
-                }
+                command = f.getControl();
             }
-        } while (((command != wait4Command) || (rc == -1/* E_RETRY */)) && (0xFF != wait4Command));
+        } while ((command != wait4Command) && (0xFF != wait4Command));
 
-        logger.trace("\n<<<====== Content of pcktBuf =======>>>\n{}\n<<<=================================>>>",
-                bytesToHex(data, bib));
-
-        return data;
+        return f;
     }
 
-    @Override
-    public boolean isCrcValid() {
-        byte lb = buffer[packetposition - 3], hb = buffer[packetposition - 2];
+    public PPPFrame receivePPPFrame(short pktId) throws IOException {
 
-        return !((lb == HDLC_SYNC) || (hb == HDLC_SYNC) || (lb == HDLC_ESC) || (hb == HDLC_ESC));
+        logger.trace("receivePPPFrame({})", pktId);
+
+        PPPFrame ppp = null;
+        short rcvpcktID = -1;
+        SmaBluetoothAddress lastSourceAddress;
+
+        do {
+            int command = 0;
+            ByteArrayOutputStream os = null;
+            SMAFrame f = null;
+
+            do {
+                f = SMAFrame.read(in);
+
+                logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
+                logger.trace("source: {}", f.getSourceAddress().toString());
+                logger.trace("destination: {}", f.getDestinationAddress().toString());
+
+                logger.trace("receiving cmd {}", f.getControl());
+
+                lastSourceAddress = f.getSourceAddress();
+
+                command = f.getControl();
+                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
+                        SMAPPPFrame.PROTOCOL)) {
+                    os = new ByteArrayOutputStream();
+                }
+
+                if (os != null) {
+                    os.write(f.getPayload());
+                }
+
+            } while (command != 1);
+
+            if (os != null) {
+                ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+                ppp = PPPFrame.read(is);
+                ppp.setFrameSourceAddress(lastSourceAddress);
+            }
+
+            rcvpcktID = (ppp == null || ppp.payload.length < 24) ? -1
+                    : (short) (Utils.getShort(ppp.payload, 22) & 0x7FFF);
+
+            if (ppp != null) {
+                logger.trace("rcvpcktID id {}", rcvpcktID);
+            }
+
+        } while (rcvpcktID != pktId);
+
+        return ppp;
     }
 
-    protected int read(byte[] b, int off, int len) throws IOException {
-        return in.read(b, off, len);
-    }
-
+    // TODO: find better place
     public int currentTimeSeconds() {
         return (int) (System.currentTimeMillis() / 1000);
     }
 
+    // TODO: find better place
     public int getTimezoneOffset() {
         TimeZone timeZone = TimeZone.getDefault();
         return timeZone.getOffset(new Date().getTime()) / 1000;

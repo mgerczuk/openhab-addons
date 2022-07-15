@@ -148,10 +148,6 @@ public abstract class SolarInverter implements SmaDevice {
             values.put(lri, new StringType(value));
         }
 
-        public boolean sumDataAvailable() {
-            return getState(SmaDevice.LRIDefinition.MeteringTotWhOut) != null;
-        }
-
         @Override
         public String toString() {
             return "deviceName=" + getDeviceName() + ", netID=" + netID + ", serial=" + serial;
