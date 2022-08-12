@@ -46,6 +46,7 @@ public class BluetoothSolarInverterPlantTest {
                 "70 00 04 00 00 00 00 01 00 00", //
                 "00");
 
+        // SMA netID=04
         bt.addWriteData( //
                 "7E 1F 00 61 00 00 00 00 00 00", //
                 "06 B6 15 25 80 00 02 00 00 04", //
@@ -55,8 +56,11 @@ public class BluetoothSolarInverterPlantTest {
         bt.addReadData( //
                 "7E 1F 00 61 06 B6 15 25 80 00", //
                 "00 00 00 00 00 00 0A 00 06 B6", //
-                "15 25 80 00 01 79 B6 7E 01 5F", //
-                "E4");
+                "15 25 80 00 01 3C 40 B8 EB 27", //
+                "B8");
+
+        // Root device address: 00:80:25:15:B6:06
+        // Local BT address: B8:27:EB:B8:40:3C
 
         bt.addReadData( //
                 "7E 14 00 6A 06 B6 15 25 80 00", //
@@ -65,71 +69,88 @@ public class BluetoothSolarInverterPlantTest {
         bt.addReadData( //
                 "7E 22 00 5C 06 B6 15 25 80 00", //
                 "00 00 00 00 00 00 05 00 06 B6", //
-                "15 25 80 00 01 01 79 B6 7E 01", //
-                "5F E4 02 01");
+                "15 25 80 00 01 01 3C 40 B8 EB", //
+                "27 B8 02 01");
+
+        // Device 0: 00:80:25:15:B6:06 -> Inverter
+        // Device 1: B8:27:EB:B8:40:3C -> Local BT Address
 
         bt.addWriteData( //
-                "7E 15 00 6B 79 B6 7E 01 5F E4", //
+                "7E 15 00 6B 3C 40 B8 EB 27 B8", //
                 "06 B6 15 25 80 00 03 00 0A 00", //
                 "AC");
 
         bt.addReadData( //
                 "7E 17 00 69 06 B6 15 25 80 00", //
-                "79 B6 7E 01 5F E4 04 00 0A 00", //
+                "3C 40 B8 EB 27 B8 04 00 0A 00", //
                 "00 00 AC");
 
         bt.addWriteData( //
-                "7E 14 00 6A 79 B6 7E 01 5F E4", //
+                "7E 14 00 6A 3C 40 B8 EB 27 B8", //
                 "06 B6 15 25 80 00 03 00 02 00");
 
         bt.addReadData( //
                 "7E 18 00 66 06 B6 15 25 80 00", //
-                "79 B6 7E 01 5F E4 04 00 02 00", //
+                "3C 40 B8 EB 27 B8 04 00 02 00", //
                 "00 00 84 03");
 
         bt.addWriteData( //
-                "7E 15 00 6B 79 B6 7E 01 5F E4", //
+                "7E 15 00 6B 3C 40 B8 EB 27 B8", //
                 "06 B6 15 25 80 00 03 00 01 00", //
                 "01");
 
         bt.addReadData( //
                 "7E 17 00 69 06 B6 15 25 80 00", //
-                "79 B6 7E 01 5F E4 04 00 01 00", //
+                "3C 40 B8 EB 27 B8 04 00 01 00", //
                 "00 00 01");
 
-        // 2022-05-23 05:37:55.564 [TRACE] [inding.sma.internal.layers.Bluetooth] - receiving cmd 4
-        // 2022-05-23 05:37:55.565 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
-        // 2022-05-23 05:38:10.568 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
-        // 2022-05-23 05:38:25.570 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
-        // 2022-05-23 05:38:40.573 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
-        // 2022-05-23 05:38:55.576 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
-        // 2022-05-23 05:39:10.578 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,255)
+        // Waiting for network to be built...
 
         bt.addReadData( //
-                "7E 69 00 17 06 B6 15 25 80 00", //
+                "7E 12 00 6C 06 B6 15 25 80 00", //
+                "00 00 00 00 00 00 06 00");
+
+        SMAPPPFrame.AppSerial = 0x3675605D;
+
+        // Send broadcast request for identification
+        bt.addWriteData( //
+                "7E 3F 00 41 3C 40 B8 EB 27 B8", //
                 "FF FF FF FF FF FF 01 00 7E FF", //
-                "03 60 65 7D 33 90 FD FF FF FF", //
-                "FF FF 00 00 71 00 2D 38 2F 7D", //
-                "5D 00 00 00 00 00 00 55 80 0A", //
-                "02 00 00 00 00 00 00 00 00 00", //
-                "00 00 03 00 00 00 FF 00 00 80", //
-                "07 00 60 01 00 71 00 2D 38 2F", //
-                "7D 5D 00 00 0A 00 0C 00 00 00", //
-                "00 00 00 00 03 00 00 00 01 01", //
-                "00 00 E8 3B 7E");
+                "03 60 65 09 A0 FF FF FF FF FF", //
+                "FF 00 00 7D 5D 00 5D 60 75 36", //
+                "00 00 00 00 00 00 02 80 00 02", //
+                "00 00 00 00 00 00 00 00 00 00", //
+                "31 EE 7E");
 
-        // 2022-05-23 05:39:19.948 [TRACE] [inding.sma.internal.layers.Bluetooth] - source: 00:80:25:15:B6:06
-        // 2022-05-23 05:39:19.949 [TRACE] [inding.sma.internal.layers.Bluetooth] - destination: FF:FF:FF:FF:FF:FF
-        // 2022-05-23 05:39:19.950 [TRACE] [inding.sma.internal.layers.Bluetooth] - receiving cmd 1
-        // 2022-05-23 05:39:19.952 [TRACE] [inding.sma.internal.layers.Bluetooth] - receive(...,6)
-        // 2022-05-23 05:39:34.954 [DEBUG] [inding.sma.internal.layers.Bluetooth] - Bluetooth(15412191).close()
-        // 2022-05-23 05:39:34.956 [ERROR] [ma.internal.handler.SmaBridgeHandler] - run() failed: can't initialize
-        // inverter plant: Timeout reading socket
-        // 2022-05-23 05:39:34.961 [DEBUG] [ma.internal.handler.SmaBridgeHandler] - run() finished.
+        bt.addReadData( //
+                "7E 6A 00 14 06 B6 15 25 80 00", //
+                "3C 40 B8 EB 27 B8 01 00 7E FF", //
+                "03 60 65 7D 33 90 7D 5D 00 5D", //
+                "60 75 36 00 00 71 00 2D 38 2F", //
+                "7D 5D 00 00 00 00 00 00 02 80", //
+                "01 02 00 00 00 00 00 00 00 00", //
+                "00 00 00 03 00 00 00 FF 00 00", //
+                "80 07 00 60 01 00 71 00 2D 38", //
+                "2F 7D 5D 00 00 0A 00 0C 00 00", //
+                "00 00 00 00 00 03 00 00 00 01", //
+                "01 00 00 9E 62 7E");
 
-        assertThrows(IOException.class, () -> {
+        // SUSyID: 113 - SN: 2100246573
+        // logoffSMAInverter()
+
+        bt.addWriteData( //
+                "7E 3B 00 45 3C 40 B8 EB 27 B8", //
+                "FF FF FF FF FF FF 01 00 7E FF", //
+                "03 60 65 08 A0 FF FF FF FF FF", //
+                "FF 00 03 7D 5D 00 5D 60 75 36", //
+                "00 03 00 00 00 00 03 80 0E 01", //
+                "FD FF FF FF FF FF 66 CE 7E");
+
+        try {
             plant.init(bt);
-        });
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
     }
 
     @Test

@@ -102,10 +102,10 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         // SmaConfig config = getConfigAs(SmaConfig.class);
         // schedule = scheduler.scheduleWithFixedDelay(this, 1, config.cycle, TimeUnit.SECONDS);
 
-        // zum Testen starten wir die Abfrage alle 10 Minuten um 7,17,27,...
-        int delay = 10 - (new Date().getMinutes() % 10);
-        delay = (delay + 7) % 10;
-        schedule = scheduler.scheduleAtFixedRate(this, delay, 10, TimeUnit.MINUTES);
+        // zum Testen starten wir die Abfrage alle 5 Minuten um 0,5,10,...
+        int delay = 5 - (new Date().getMinutes() % 5);
+        // delay = (delay + 7) % 10;
+        schedule = scheduler.scheduleAtFixedRate(this, delay, 5, TimeUnit.MINUTES);
     }
 
     @Override
