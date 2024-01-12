@@ -42,3 +42,9 @@ Inverter channels
 | uac3     | Number | Voltage AC3                  |
 | totalpac | Number | Total power AC               |
 | invtype  | String | Inverter type                |
+
+## Build Hints
+
+```console
+PS> mvn -DskipChecks=true clean install
+```
