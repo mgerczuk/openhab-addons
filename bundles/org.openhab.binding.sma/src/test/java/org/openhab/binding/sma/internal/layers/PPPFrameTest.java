@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
-import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -63,7 +63,7 @@ class PPPFrameTest {
             assertEquals(-1, f.getAddress());
             assertEquals(3, f.getControl());
             assertEquals(0x6065, f.getProtocol());
-            assertTrue(Arrays.areEqual(expected, f.getPayload()));
+            assertTrue(Arrays.equals(expected, f.getPayload()));
 
         } catch (IOException e) {
             fail(e.getMessage());

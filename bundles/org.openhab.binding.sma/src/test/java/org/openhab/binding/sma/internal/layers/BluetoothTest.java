@@ -15,8 +15,8 @@ package org.openhab.binding.sma.internal.layers;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 
-import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -52,7 +52,7 @@ public class BluetoothTest {
             bt.open();
             PPPFrame frame = bt.receivePPPFrame((short) 2);
 
-            assertTrue(Arrays.areEqual(expected, frame.getPayload()));
+            assertTrue(Arrays.equals(expected, frame.getPayload()));
         } catch (IOException e) {
             fail(e.getMessage());
         }
