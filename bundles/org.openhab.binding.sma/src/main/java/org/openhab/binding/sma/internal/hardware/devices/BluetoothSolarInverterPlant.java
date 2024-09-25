@@ -14,13 +14,10 @@ package org.openhab.binding.sma.internal.hardware.devices;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.openhab.binding.sma.internal.SmaBinding.Device;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.layers.LittleEndianByteArrayOutputStream;
 import org.openhab.binding.sma.internal.layers.PPPFrame;
@@ -37,12 +34,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
     private static final Logger logger = LoggerFactory.getLogger(BluetoothSolarInverterPlant.class);
 
-    /**
-     * defines valid LRIs for that kind of device
-     */
-    private static final List<LRIDefinition> validLRIDefinition = Arrays.asList(LRIDefinition.MeteringTotWhOut,
-            LRIDefinition.MeteringDyWhOut, LRIDefinition.GridMsTotW, LRIDefinition.NameplateLocation);
-
     private final int connectRetries = 10;
     private boolean isInit = false;
     private SmaBluetoothAddress rootDeviceAdress;
@@ -55,8 +46,8 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
     // protected String address;
 
-    public BluetoothSolarInverterPlant(Device device) {
-        super(device);
+    public BluetoothSolarInverterPlant() {
+        super();
     }
 
     public void init(Bluetooth layer) throws IOException {
@@ -472,8 +463,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                             .writeInt(first)//
                             .writeInt(last)//
                             .toPPPFrame()));
-
-            byte[] fdata;
 
             for (int j = 0; j < inverters.size(); j++) {
                 validPcktID = false;

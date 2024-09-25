@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
-import org.openhab.binding.sma.internal.SmaBinding;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BluetoothDebug;
@@ -32,8 +31,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testRebuildNetwork() {
         BluetoothDebug bt = new BluetoothDebug();
-        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
-                new SmaBinding().createDevice("00:80:25:15:B6:06", "0000"));
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         bt.addWriteData( //
                 "7E 17 00 69 00 00 00 00 00 00", //
@@ -157,8 +155,7 @@ public class BluetoothSolarInverterPlantTest {
     void testGetData0() {
         BluetoothDebug bt = new BluetoothDebug();
         SMAPPPFrame.AppSerial = 0x38C6DB35;
-        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
-                new SmaBinding().createDevice("00:80:25:15:B6:06", "0000"));
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
         // query SMA Net ID
@@ -641,8 +638,7 @@ public class BluetoothSolarInverterPlantTest {
     void testGetData() {
         BluetoothDebug bt = new BluetoothDebug();
         SMAPPPFrame.AppSerial = 934043669;
-        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
-                new SmaBinding().createDevice("00:80:25:15:B6:06", "0000"));
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
         // query SMA Net ID

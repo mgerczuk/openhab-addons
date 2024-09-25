@@ -124,9 +124,4 @@ public class SMAFrame {
     private static int le2short(byte[] buffer, int i) {
         return (buffer[i] & 0xff) | ((buffer[i + 1] << 8) & 0xff00);
     }
-
-    private static void short2le(byte[] buffer, int i, short v) {
-        buffer[i] = (byte) ((v >>> 0) & 0xFF);
-        buffer[i + 1] = (byte) ((v >>> 8) & 0xFF);
-    }
 }

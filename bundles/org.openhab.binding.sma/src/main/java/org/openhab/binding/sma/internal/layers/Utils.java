@@ -46,7 +46,6 @@ public class Utils {
     public static final String bytesToHex(byte[] bytes, int length, char delimiter) {
         StringBuilder sb = new StringBuilder();
         sb.append("--------: 00 01 02 03 04 05 06 07 08 09\n00000000: ");
-        int i = 0;
         for (int j = 0; j < length; j++) {
             int v = bytes[j] & 0xFF;
             sb.append(hexArray[v >>> 4]);

@@ -17,27 +17,21 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.openhab.binding.sma.internal.SmaBinding.Device;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.types.State;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
 public abstract class SolarInverter implements SmaDevice {
-    private static final Logger logger = LoggerFactory.getLogger(SolarInverter.class);
 
-    protected Device device;
     protected Data data;
 
     protected short pcktID = 1;
 
-    public SolarInverter(Device device) {
+    public SolarInverter() {
         super();
-        this.device = device;
     }
 
     protected abstract boolean getInverterData(InverterDataType type);
@@ -48,10 +42,6 @@ public abstract class SolarInverter implements SmaDevice {
 
     public void setSerial(SmaSerial serial) {
         this.data.serial = serial;
-    }
-
-    private boolean hasValidValues(InverterDataType data) {
-        return false; // ((flags & data.getValue()) != 0);
     }
 
     public static abstract class Data {

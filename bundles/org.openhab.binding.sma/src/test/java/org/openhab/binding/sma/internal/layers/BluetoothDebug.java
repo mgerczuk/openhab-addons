@@ -17,15 +17,11 @@ import java.io.IOException;
 import javax.microedition.io.StreamConnection;
 
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
 public class BluetoothDebug extends Bluetooth {
-
-    private static final Logger logger = LoggerFactory.getLogger(BluetoothDebug.class);
 
     private StreamConnectionDebug connectionDebug = new StreamConnectionDebug();
 
@@ -85,21 +81,14 @@ public class BluetoothDebug extends Bluetooth {
         }
     }
 
-    private ReadCall[] calls;
-    private int callInx = 0;
-    private WriteCall[] writes;
-    private int writeInx = 0;
+    public void setDebugData(ReadCall[] calls, WriteCall[] writes) {
 
-    public void setDebugData(ReadCall[] calls0, WriteCall[] writes0) {
-        calls = calls0;
-        writes = writes0;
-
-        for (ReadCall c : calls0) {
+        for (ReadCall c : calls) {
             connectionDebug.addReadData(c.data);
         }
 
-        if (writes0 != null) {
-            for (WriteCall c : writes0) {
+        if (writes != null) {
+            for (WriteCall c : writes) {
                 connectionDebug.addWriteData(c.data);
             }
         }

@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.sma.internal.SmaBinding;
 import org.openhab.binding.sma.internal.SmaBridgeConfiguration;
 import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
@@ -121,17 +120,14 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         logger.debug("SmaBridgeHandler.initRunnable run()");
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
-        if (!SunriseSunset.sunrise_sunset(config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
+        if (!SunriseSunset.sunrise_sunset(new Date(), config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
             logger.debug("Nothing to do... it's dark.");
             return;
         }
 
-        SmaBinding binding = new SmaBinding();
-        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant(
-                binding.createDevice(config.btAddress, config.userPassword));
+        BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         logger.trace("config.btAddress = {}, config.userPassword = {}", config.btAddress, config.userPassword);
-        ThingStatus thingStatus = ThingStatus.UNKNOWN;
 
         HashMap<Integer, SmaHandler> attachedThingsCopy;
         synchronized (attachedThings) {
