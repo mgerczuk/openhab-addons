@@ -15,6 +15,7 @@ package org.openhab.binding.sma.internal.handler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -55,8 +56,6 @@ import org.slf4j.LoggerFactory;
 public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(SmaBridgeHandler.class);
-
-    private static final float SunRSOffset = 450.0f;
 
     private final BundleContext bundleContext;
 
@@ -120,7 +119,14 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         logger.debug("SmaBridgeHandler.initRunnable run()");
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
-        if (!SunriseSunset.sunrise_sunset(new Date(), config.latitude, config.longitude, SunRSOffset / 3600.0f)) {
+
+        SunriseSunset srs = new SunriseSunset(config.latitude, config.longitude);
+        Calendar now = Calendar.getInstance();
+        Calendar sunrise = srs.getSunrise(now);
+        Calendar sunset = srs.getSunset(now);
+        sunset.add(Calendar.MINUTE, 5);
+
+        if (now.before(sunrise) || now.after(sunset)) {
             logger.debug("Nothing to do... it's dark.");
             return;
         }
@@ -181,7 +187,15 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         } catch (IOException e) {
 
-            logger.error("run() failed: {}", e.getMessage());
+            // log errors as info in first or last half hour
+            sunrise.add(Calendar.MINUTE, 30);
+            sunset.add(Calendar.MINUTE, -35);
+
+            if (now.before(sunrise) || now.after(sunset)) {
+                logger.info("run() failed: {}", e.getMessage());
+            } else {
+                logger.error("run() failed: {}", e.getMessage());
+            }
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } catch (Exception e) {
 
