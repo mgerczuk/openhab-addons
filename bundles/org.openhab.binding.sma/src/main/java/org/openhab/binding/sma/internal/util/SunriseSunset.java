@@ -69,4 +69,16 @@ public class SunriseSunset {
     public Calendar getSunset(Calendar date) {
         return calculator.getOfficialSunsetCalendarForDate(date);
     }
+
+    public boolean logErrors() {
+        Calendar now = Calendar.getInstance();
+        Calendar sunrise = getSunrise(now);
+        Calendar sunset = getSunset(now);
+
+        // log errors as info in first or last half hour
+        sunrise.add(Calendar.MINUTE, 30);
+        sunset.add(Calendar.MINUTE, -30);
+
+        return now.after(sunrise) && now.before(sunset);
+    }
 }

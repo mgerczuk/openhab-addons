@@ -60,6 +60,9 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
     private final BundleContext bundleContext;
 
     @Nullable
+    private SunriseSunset srs;
+
+    @Nullable
     private ScheduledFuture<?> schedule;
 
     @Nullable
@@ -98,6 +101,9 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         }
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
+
+        srs = new SunriseSunset(config.latitude, config.longitude);
+
         int delay = config.cycle - (new Date().getSeconds() % config.cycle);
         schedule = scheduler.scheduleAtFixedRate(this, delay, config.cycle, TimeUnit.SECONDS);
     }
@@ -120,7 +126,6 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         SmaBridgeConfiguration config = getConfigAs(SmaBridgeConfiguration.class);
 
-        SunriseSunset srs = new SunriseSunset(config.latitude, config.longitude);
         Calendar now = Calendar.getInstance();
         Calendar sunrise = srs.getSunrise(now);
         Calendar sunset = srs.getSunset(now);
@@ -187,14 +192,10 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         } catch (IOException e) {
 
-            // log errors as info in first or last half hour
-            sunrise.add(Calendar.MINUTE, 30);
-            sunset.add(Calendar.MINUTE, -35);
-
-            if (now.before(sunrise) || now.after(sunset)) {
-                logger.info("run() failed: {}", e.getMessage());
-            } else {
+            if (srs.logErrors()) {
                 logger.error("run() failed: {}", e.getMessage());
+            } else {
+                logger.debug("run() failed: {}", e.getMessage());
             }
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } catch (Exception e) {
@@ -290,7 +291,11 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         }
 
         for (int i = 0; i < remaining.size(); i++) {
-            logger.error("getInverterData({}) failed", remaining.get(i).toString());
+            if (srs.logErrors()) {
+                logger.error("getInverterData({}) failed", remaining.get(i).toString());
+            } else {
+                logger.debug("getInverterData({}) failed", remaining.get(i).toString());
+            }
         }
 
         inverter.logoff();
