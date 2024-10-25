@@ -16,12 +16,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.DeviceClass;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BluetoothDebug;
 import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
+import org.openhab.core.library.types.DecimalType;
 
 /**
  * @author Martin Gerczuk - Initial contribution
@@ -621,17 +625,77 @@ public class BluetoothSolarInverterPlantTest {
             plant.init(bt);
             plant.logon(SmaUserGroup.User, "0000");
             plant.setInverterTime();
+
+            assertEquals(2, plant.getInverters().size());
+            Data[] invArr = plant.getInverters().toArray(new BluetoothSolarInverterPlant.Data[0]);
+
+            BluetoothSolarInverterPlant.Data data99 = Arrays.stream(invArr)
+                    .filter(i -> i.getSerial().equals(new SmaSerial((short) 99, 2001299653L))).findFirst().orElse(null);
+            assertNotNull(data99);
+            BluetoothSolarInverterPlant.Data data113 = Arrays.stream(invArr)
+                    .filter(i -> i.getSerial().equals(new SmaSerial((short) 113, 2100246573))).findFirst().orElse(null);
+            assertNotNull(data113);
+
             plant.getInverterData(SmaDevice.InverterDataType.SpotACTotalPower);
+
+            compareLriValue(data99, SmaDevice.LRIDefinition.GridMsTotW, 2.536);
+            compareLriValue(data113, SmaDevice.LRIDefinition.GridMsTotW, 1.982);
+
             plant.getInverterData(SmaDevice.InverterDataType.SpotACVoltage);
+
+            compareLriValue(data99, SmaDevice.LRIDefinition.GridMsPhVphsA, 238.0);
+            compareLriValue(data113, SmaDevice.LRIDefinition.GridMsPhVphsA, 237.86);
+            assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsPhVphsB)); // Value is NAN!
+            assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsPhVphsC)); // Value is NAN!
+
             plant.getInverterData(SmaDevice.InverterDataType.EnergyProduction);
+
+            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringTotWhOut, 51542.483);
+            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringDyWhOut, 5.569);
+            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringTotWhOut, 40198.533);
+            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringDyWhOut, 4.316);
+
             plant.getInverterData(SmaDevice.InverterDataType.MaxACPower);
+
+            assertEquals(3600L, data99.pmax1);
+            assertEquals(0L, data99.pmax2);
+            assertEquals(0L, data99.pmax3);
+            assertEquals(3000L, data113.pmax1);
+            assertEquals(0L, data113.pmax2);
+            assertEquals(0L, data113.pmax3);
+
             plant.getInverterData(SmaDevice.InverterDataType.DeviceStatus);
+
+            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealth, 307);
+            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealth, 307);
+
             plant.getInverterData(SmaDevice.InverterDataType.TypeLabel);
+
+            assertEquals("SN: 2001299653", data99.getDeviceName());
+            assertEquals(DeviceClass.SolarInverter, data99.getDevClass());
+            assertEquals("SB 3300", data99.getDeviceType());
+            assertEquals("SN: 2100246573", data113.getDeviceName());
+            assertEquals(DeviceClass.SolarInverter, data113.getDevClass());
+            assertEquals("SB 3000TL-20", data113.getDeviceType());
+
             plant.getInverterData(SmaDevice.InverterDataType.SoftwareVersion);
+
+            assertEquals("12.09.122.R", data99.swVersion);
+            assertEquals("02.08.01.R", data113.swVersion);
+
             plant.logoff();
         } catch (IOException e) {
             fail(e.getMessage());
         }
+    }
+
+    private void compareLriValue(Data data, LRIDefinition lri, double expected) {
+        final double epsilon = 1e-6;
+
+        assertTrue(data.isValid(lri), lri.name() + " is not valid");
+        double actual = ((DecimalType) data.getState(lri)).doubleValue();
+        assertTrue(Math.abs(expected - actual) < epsilon,
+                lri.name() + " differs. Expected " + Double.toString(expected) + ", was " + Double.toString(actual));
     }
 
     @Test

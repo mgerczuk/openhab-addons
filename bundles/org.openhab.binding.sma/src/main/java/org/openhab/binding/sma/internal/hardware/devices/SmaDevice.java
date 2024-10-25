@@ -115,12 +115,29 @@ public interface SmaDevice {
 
         private final int value;
 
+        private static HashMap<Integer, SmaDevice.DeviceClass> valueMap;
+
         private DeviceClass(int value) {
             this.value = value;
         }
 
         public int getValue() {
             return value;
+        }
+
+        public static DeviceClass fromOrdinal(int i) {
+            if (valueMap == null) {
+                prepareMap();
+            }
+            return valueMap.get(i);
+        }
+
+        private static synchronized void prepareMap() {
+            valueMap = new HashMap<Integer, SmaDevice.DeviceClass>(SmaDevice.DeviceClass.values().length);
+
+            for (SmaDevice.DeviceClass e : SmaDevice.DeviceClass.values()) {
+                valueMap.put(e.value, e);
+            }
         }
     }
 
@@ -284,6 +301,37 @@ public interface SmaDevice {
             for (SmaDevice.LRIDefinition e : SmaDevice.LRIDefinition.values()) {
                 valueMap.put(e.getValue(), e);
                 codeMap.put(e.getCode(), e);
+            }
+        }
+    }
+
+    public enum SMA_DATATYPE {
+        DT_ULONG(0),
+        DT_STATUS(8),
+        DT_STRING(16),
+        DT_FLOAT(32),
+        DT_SLONG(64);
+
+        public final int value;
+
+        private static HashMap<Integer, SmaDevice.SMA_DATATYPE> valueMap;
+
+        SMA_DATATYPE(int value) {
+            this.value = value;
+        }
+
+        public static SMA_DATATYPE fromOrdinal(int i) {
+            if (valueMap == null) {
+                prepareMap();
+            }
+            return valueMap.get(i);
+        }
+
+        private static synchronized void prepareMap() {
+            valueMap = new HashMap<Integer, SmaDevice.SMA_DATATYPE>(SmaDevice.SMA_DATATYPE.values().length);
+
+            for (SmaDevice.SMA_DATATYPE e : SmaDevice.SMA_DATATYPE.values()) {
+                valueMap.put(e.value, e);
             }
         }
     }

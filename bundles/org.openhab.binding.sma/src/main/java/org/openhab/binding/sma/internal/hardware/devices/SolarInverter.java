@@ -34,8 +34,6 @@ public abstract class SolarInverter implements SmaDevice {
         super();
     }
 
-    protected abstract boolean getInverterData(InverterDataType type);
-
     public SmaSerial getSerial() {
         return data.serial;
     }
@@ -64,7 +62,7 @@ public abstract class SolarInverter implements SmaDevice {
         protected long pdc1, pdc2;
         protected long udc1, udc2;
         protected long idc1, idc2;
-        protected long pmax1, pmax2, pmax3;
+        public long pmax1, pmax2, pmax3;
         // protected long totalPac;
         protected long pac1, pac2, pac3;
         // protected long uac1, uac2, uac3;
@@ -116,6 +114,22 @@ public abstract class SolarInverter implements SmaDevice {
 
         public void setDeviceType(String deviceType) {
             this.deviceType = deviceType;
+        }
+
+        public DeviceClass getDevClass() {
+            return devClass;
+        }
+
+        public void setDevClass(DeviceClass devClass) {
+            this.devClass = devClass;
+        }
+
+        public int getDeviceStatus() {
+            return deviceStatus;
+        }
+
+        public void setDeviceStatus(int deviceStatus) {
+            this.deviceStatus = deviceStatus;
         }
 
         public Set<Entry<LRIDefinition, State>> getEntries() {

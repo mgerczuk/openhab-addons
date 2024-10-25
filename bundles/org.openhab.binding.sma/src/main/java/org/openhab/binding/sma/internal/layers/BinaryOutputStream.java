@@ -24,15 +24,15 @@ import java.io.IOException;
  *
  * @author Martin Gerczuk - Initial contribution
  */
-public class LittleEndianByteArrayOutputStream extends FilterOutputStream {
+public class BinaryOutputStream extends FilterOutputStream {
 
     ByteArrayOutputStream os;
 
-    public LittleEndianByteArrayOutputStream() {
+    public BinaryOutputStream() {
         this(new ByteArrayOutputStream());
     }
 
-    private LittleEndianByteArrayOutputStream(ByteArrayOutputStream os) {
+    private BinaryOutputStream(ByteArrayOutputStream os) {
         super(new DataOutputStream(os));
         this.os = os;
     }
@@ -46,28 +46,28 @@ public class LittleEndianByteArrayOutputStream extends FilterOutputStream {
         return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL, os.toByteArray());
     }
 
-    public LittleEndianByteArrayOutputStream writeBoolean(boolean v) throws IOException {
+    public BinaryOutputStream writeBoolean(boolean v) throws IOException {
         ((DataOutputStream) out).writeBoolean(v);
         return this;
     }
 
-    public LittleEndianByteArrayOutputStream writeByte(int v) throws IOException {
+    public BinaryOutputStream writeByte(int v) throws IOException {
         ((DataOutputStream) out).writeByte(v);
         return this;
     }
 
-    public LittleEndianByteArrayOutputStream writeShort(int v) throws IOException {
+    public BinaryOutputStream writeShort(int v) throws IOException {
         out.write(0xFF & v);
         out.write(0xFF & (v >> 8));
         return this;
     }
 
-    public LittleEndianByteArrayOutputStream writeChar(int v) throws IOException {
+    public BinaryOutputStream writeChar(int v) throws IOException {
         writeShort(v);
         return this;
     }
 
-    public LittleEndianByteArrayOutputStream writeInt(int v) throws IOException {
+    public BinaryOutputStream writeInt(int v) throws IOException {
         out.write(0xFF & v);
         out.write(0xFF & (v >> 8));
         out.write(0xFF & (v >> 16));
@@ -89,12 +89,12 @@ public class LittleEndianByteArrayOutputStream extends FilterOutputStream {
     // return this;
     // }
 
-    public LittleEndianByteArrayOutputStream writeBytes(String s) throws IOException {
+    public BinaryOutputStream writeBytes(String s) throws IOException {
         ((DataOutputStream) out).writeBytes(s);
         return this;
     }
 
-    public LittleEndianByteArrayOutputStream writeBytes(byte[] data) throws IOException {
+    public BinaryOutputStream writeBytes(byte[] data) throws IOException {
         ((DataOutputStream) out).write(data);
         return this;
     }

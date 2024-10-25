@@ -72,42 +72,22 @@ public class Utils {
         return new String(hexChars);
     }
 
-    public static byte getByte(byte[] buffer, int i) {
-        return (buffer[i]);
-    }
-
+    @Deprecated // use BinaryInputStream
     public static int getShort(byte[] buffer, int i) {
         return ((buffer[i] & 0xff) | ((buffer[i + 1] << 8) & 0xff00));
     }
 
+    @Deprecated // use BinaryInputStream
     public static int getInt(byte[] buffer, int i) {
         return ((Utils.getShort(buffer, i + 2) << 16) & 0xffff0000) | (Utils.getShort(buffer, i) & 0xffff);
-    }
-
-    public static long getLong(byte[] buffer, int i) {
-        return (((long) Utils.getInt(buffer, i + 4) << 32) & 0xffffffff00000000l)
-                | (Utils.getInt(buffer, i) & 0xffffffffl);
-    }
-
-    public static String getString(byte[] buffer, int i, int length) {
-        String s = new String(buffer, i, length);
-        int term = s.indexOf('\0');
-        if (term >= 0) {
-            s = s.substring(0, term);
-        }
-        return s;
     }
 
     public static double tokWh(long value) {
         return (double) (value) / 1000;
     }
 
-    public static float tokW(long value) {
-        return (float) (value) / 1000;
-    }
-
-    public static double toHour(long value) {
-        return (double) (value) / 3600;
+    public static double tokW(long value) {
+        return (double) (value) / 1000;
     }
 
     public static float toAmp(long value) {
@@ -118,11 +98,21 @@ public class Utils {
         return (float) value / 100;
     }
 
-    public static float toHz(long value) {
-        return (float) value / 100;
-    }
+    public static String toVersionString(long version) {
+        byte vType = (byte) (version & 0xFF);
 
-    public static float toTemp(long value) {
-        return (float) value / 100;
+        String releaseType;
+        if (vType > 5) {
+            releaseType = Byte.toString(vType);
+        } else {
+            releaseType = String.valueOf("NEABRS".charAt(vType)); // NOREV-EXPERIMENTAL-ALPHA-BETA-RELEASE-SPECIAL
+        }
+
+        byte vBuild = (byte) ((version >> 8) & 0xFF);
+        byte vMinor = (byte) ((version >> 16) & 0xFF);
+        byte vMajor = (byte) ((version >> 24) & 0xFF);
+        // Vmajor and Vminor = 0x12 should be printed as '12' and not '18' (BCD)
+        return String.format("%c%c.%c%c.%02d.%s", '0' + (vMajor >> 4), '0' + (vMajor & 0x0F), '0' + (vMinor >> 4),
+                '0' + (vMinor & 0x0F), vBuild, releaseType);
     }
 }

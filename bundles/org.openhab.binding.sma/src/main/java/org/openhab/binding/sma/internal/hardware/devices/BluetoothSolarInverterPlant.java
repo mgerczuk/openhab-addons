@@ -16,14 +16,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.openhab.binding.sma.internal.layers.BinaryInputStream;
+import org.openhab.binding.sma.internal.layers.BinaryOutputStream;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
-import org.openhab.binding.sma.internal.layers.LittleEndianByteArrayOutputStream;
 import org.openhab.binding.sma.internal.layers.PPPFrame;
 import org.openhab.binding.sma.internal.layers.SMAFrame;
 import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
 import org.openhab.binding.sma.internal.layers.Utils;
+import org.openhab.binding.sma.internal.layers.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +88,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             // query SMA Net ID
             layer.sendSMAFrame(new SMAFrame(0x0201, layer.getLocalAddress(),
                     new SmaBluetoothAddress(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }), //
-                    new LittleEndianByteArrayOutputStream()//
+                    new BinaryOutputStream()//
                             .writeBytes("ver\r\n")//
                             .toByteArray()));
 
@@ -96,7 +99,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
             // check root device Address
             layer.sendSMAFrame(new SMAFrame(0x02, layer.getLocalAddress(), layer.getDestAddress(), //
-                    new LittleEndianByteArrayOutputStream()//
+                    new BinaryOutputStream()//
                             .writeInt(0x00700400)//
                             .writeByte((byte) netID)//
                             .writeInt(0)//
@@ -150,20 +153,20 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 // We need more handshake 03/04 commands to initialise network
                 // connection between inverters
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
-                        new LittleEndianByteArrayOutputStream()//
+                        new BinaryOutputStream()//
                                 .writeShort((short) 0x000A)//
                                 .writeByte((byte) 0xAC)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
-                        new LittleEndianByteArrayOutputStream()//
+                        new BinaryOutputStream()//
                                 .writeShort((short) 0x0002)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
-                        new LittleEndianByteArrayOutputStream()//
+                        new BinaryOutputStream()//
                                 .writeShort((short) 0x0001)//
                                 .writeByte((byte) 0x01)//
                                 .toByteArray()));
@@ -437,7 +440,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         dest[5] = src[start + 0];
     }
 
-    @Override
     public boolean getInverterData(InverterDataType type) {
         logger.debug("getInverterData({})\n", type);
 
@@ -445,7 +447,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             return false;
         }
 
-        int recordsize = 0;
         boolean validPcktID = false;
 
         final int command = type.getCommand();
@@ -453,7 +454,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         final int last = type.getLast();
 
         try {
-            // layer.open();
 
             layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
@@ -469,450 +469,179 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 do {
                     PPPFrame frame = layer.receivePPPFrame(pcktID);
                     byte[] data = frame.getPayload();
-                    /*
-                     * if ((ConnType == CT_BLUETOOTH) && (!validateChecksum()))
-                     * return E_CHKSUM; else
-                     */
-                    {
+                    BinaryInputStream rd = new BinaryInputStream(data);
 
-                        SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 10), Utils.getInt(data, 12));
-                        BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
+                    SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 10), Utils.getInt(data, 12));
+                    BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
-                        if (current != null) {
-                            validPcktID = true;
-                            int value = 0;
-                            long value64 = 0;
-                            for (int i = 36; i < data.length; i += recordsize) {
-                                int code = Utils.getInt(data, i);
-                                // LRIDefinition lri = LRIDefinition
-                                // .fromOrdinal(code & 0x00FFFF00);
-                                // int cls = code & 0xFF;
-                                LRIDefinition lri = LRIDefinition.fromOrdinal(code & 0x00FFFF00);
+                    if (current == null) {
+                        logger.warn("Unexpected: {} not found!", serial.toString());
+                        continue;
+                    }
 
-                                if (lri == null) { // LRI not found. Maybe separated into classes
-                                    lri = LRIDefinition.fromOrdinal(code & 0x00FFFFFF);
+                    validPcktID = true;
 
-                                    // skip unknown codes
-                                    if (lri == null) {
-                                        if (recordsize == 0) {
-                                            recordsize = 12;
-                                        }
-                                        continue;
-                                    }
+                    rd.seek(0);
+                    int a = rd.readByte();
+                    rd.seek(28);
+                    long c = rd.readUInt();
+                    long b = rd.readUInt();
+
+                    final int recordsize = 4 * (a - 9) / (int) (b - c + 1);
+
+                    for (int i = 36; i < data.length; i += recordsize) {
+
+                        rd.seek(i);
+
+                        Value val = Value.Read(rd, recordsize);
+
+                        if (val.getLri() == LRIDefinition.MeteringDyWhOut) {
+                            // This function gives us the current
+                            // inverter time
+                            current.inverterTime = val.getDatetime();
+                        }
+
+                        switch (val.getLri()) {
+                            case GridMsTotW: // SPOT_PACTOT
+
+                                // This function gives us the time when
+                                // the inverter was switched off
+                                current.sleepTime = val.getDatetime();
+                                current.setValue(val.getLri(), Utils.tokW(val.getSLongValue()));
+                                current.flags |= type.getValue();
+                                logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getSLongValue()),
+                                        val.getDatetime());
+                                break;
+
+                            case OperationHealthSttOk: // INV_PACMAX1
+
+                                current.pmax1 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strWatt, "INV_PACMAX1", val.getULongValue(), val.getDatetime());
+                                break;
+
+                            case OperationHealthSttWrn: // INV_PACMAX2
+
+                                current.pmax2 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strWatt, "INV_PACMAX2", val.getULongValue(), val.getDatetime());
+                                break;
+
+                            case OperationHealthSttAlm: // INV_PACMAX3
+
+                                current.pmax3 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strWatt, "INV_PACMAX3", val.getULongValue(), val.getDatetime());
+                                break;
+
+                            case GridMsPhVphsA: // SPOT_UAC1
+                            case GridMsPhVphsB: // SPOT_UAC2
+                            case GridMsPhVphsC: // SPOT_UAC3
+
+                                if (val.getULongValue() != Value.ULong.NANVal) {
+                                    current.setValue(val.getLri(), Utils.toVolt(val.getULongValue()));
+                                    current.flags |= type.getValue();
+                                    logger.debug(strVolt, val.getLri().getCode(), Utils.toVolt(val.getULongValue()),
+                                            val.getDatetime());
                                 }
+                                break;
 
-                                char dataType = (char) (code >>> 24);
-                                Date datetime = new Date(Utils.getInt(data, i + 4) * 1000L);
+                            case GridMsAphsA_1: // SPOT_IAC1
 
-                                // fix: We can't rely on dataType because it
-                                // can be both 0x00 or 0x40 for DWORDs
-                                if ((lri == LRIDefinition.MeteringDyWhOut) || (lri == LRIDefinition.MeteringTotWhOut)
-                                        || (lri == LRIDefinition.MeteringTotFeedTms)
-                                        || (lri == LRIDefinition.MeteringTotOpTms)) // QWORD
-                                {
-                                    value64 = Utils.getLong(data, i + 8);
-                                    if ((value64 == NaN_S64) || (value64 == NaN_U64)) {
-                                        value64 = 0;
-                                    }
-                                } else if ((dataType != 0x10) && (dataType != 0x08))
-                                // Not TEXT or STATUS, so it should be DWORD
-                                {
-                                    value = Utils.getInt(data, i + 8);
-                                    if ((value == NaN_S32) || (value == NaN_U32)) {
-                                        value = 0;
-                                    }
-                                }
+                                current.iac1 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strAmp, "SPOT_IAC1", Utils.toAmp(val.getULongValue()), val.getDatetime());
+                                break;
 
-                                if (lri == LRIDefinition.MeteringDyWhOut) {
-                                    // This function gives us the current
-                                    // inverter time
-                                    current.inverterTime = datetime;
-                                }
+                            case GridMsAphsB_1: // SPOT_IAC2
 
-                                switch (lri) {
-                                    case GridMsTotW: // SPOT_PACTOT
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        // This function gives us the time when
-                                        // the inverter was switched off
-                                        current.sleepTime = datetime;
-                                        current.setValue(lri, Utils.tokW(value));
-                                        current.flags |= type.getValue();
-                                        logger.debug(strkW, lri.getCode(), Utils.tokW(value), datetime);
-                                        break;
+                                current.iac2 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strAmp, "SPOT_IAC2", Utils.toAmp(val.getULongValue()), val.getDatetime());
+                                break;
 
-                                    case OperationHealthSttOk: // INV_PACMAX1
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pmax1 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "INV_PACMAX1", value, datetime);
-                                        break;
+                            case GridMsAphsC_1: // SPOT_IAC3
 
-                                    case OperationHealthSttWrn: // INV_PACMAX2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pmax2 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "INV_PACMAX2", value, datetime);
-                                        break;
+                                current.iac3 = val.getULongValue();
+                                current.flags |= type.getValue();
+                                logger.debug(strAmp, "SPOT_IAC3", Utils.toAmp(val.getULongValue()), val.getDatetime());
+                                break;
 
-                                    case OperationHealthSttAlm: // INV_PACMAX3
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pmax3 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "INV_PACMAX3", value, datetime);
-                                        break;
+                            case MeteringTotWhOut: // SPOT_ETOTAL
+                            case MeteringDyWhOut: // SPOT_ETODAY
 
-                                    case GridMsWphsA: // SPOT_PAC1
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pac1 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "SPOT_PAC1", value, datetime);
-                                        break;
+                                current.setValue(val.getLri(), Utils.tokWh(val.getULongValue()));
+                                current.flags |= type.getValue();
+                                logger.debug(strkWh, current + val.getLri().getCode(), Utils.tokWh(val.getULongValue()),
+                                        val.getDatetime());
+                                break;
 
-                                    case GridMsWphsB: // SPOT_PAC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pac2 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "SPOT_PAC2", value, datetime);
-                                        break;
+                            case NameplateLocation: // INV_NAME
 
-                                    case GridMsWphsC: // SPOT_PAC3
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pac3 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strWatt, "SPOT_PAC3", value, datetime);
-                                        break;
+                                // This function gives us the time when the inverter was switched on
+                                current.wakeupTime = val.getDatetime();
+                                current.setDeviceName(val.getStringValue());
+                                current.flags |= type.getValue();
+                                logger.debug("INV_NAME: {}   {}", current.getDeviceName(), val.getDatetime());
+                                break;
 
-                                    case GridMsPhVphsA: // SPOT_UAC1
-                                    case GridMsPhVphsB: // SPOT_UAC2
-                                    case GridMsPhVphsC: // SPOT_UAC3
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.setValue(lri, Utils.toVolt(value));
-                                        current.flags |= type.getValue();
-                                        logger.debug(strVolt, lri.getCode(), Utils.toVolt(value), datetime);
-                                        break;
+                            case NameplatePkgRev: // INV_SWVER
 
-                                    case GridMsAphsA_1: // SPOT_IAC1
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.iac1 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strAmp, "SPOT_IAC1", Utils.toAmp(value), datetime);
-                                        break;
+                                current.swVersion = Utils.toVersionString(val.getULongValue());
+                                current.flags |= type.getValue();
+                                logger.debug("INV_SWVER: '{}' {}", current.swVersion, val.getDatetime());
+                                break;
 
-                                    case GridMsAphsB_1: // SPOT_IAC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.iac2 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strAmp, "SPOT_IAC2", Utils.toAmp(value), datetime);
-                                        break;
+                            case NameplateModel: // INV_TYPE
+                            {
+                                List<Integer> tags = val.getStatusTags();
 
-                                    case GridMsAphsC_1: // SPOT_IAC3
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.iac3 = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strAmp, "SPOT_IAC3", Utils.toAmp(value), datetime);
-                                        break;
-
-                                    case GridMsHz: // SPOT_FREQ
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.gridFreq = value;
-                                        current.flags |= type.getValue();
-                                        logger.debug("{}: {} (Hz) {}", "SPOT_FREQ", Utils.toHz(value), datetime);
-                                        break;
-
-                                    case DcMsWatt1: // SPOT_PDC1
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.pdc1 = value;
-                                        logger.debug(strWatt, "SPOT_PDC1", value, datetime);
-                                        current.flags |= type.getValue();
-                                        break;
-
-                                    case DcMsWatt2: // SPOT_PDC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-
-                                        current.pdc2 = value;
-                                        logger.debug(strWatt, "SPOT_PDC2", value, datetime);
-
-                                        current.flags |= type.getValue();
-                                        break;
-                                    case DcMsVol1: // SPOT_UDC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-
-                                        current.udc1 = value;
-                                        logger.debug(strVolt, "SPOT_UDC1", Utils.toVolt(value), datetime);
-                                        current.flags |= type.getValue();
-                                        break;
-
-                                    case DcMsVol2: // SPOT_UDC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-                                        current.udc2 = value;
-                                        logger.debug(strVolt, "SPOT_UDC2", Utils.toVolt(value), datetime);
-                                        current.flags |= type.getValue();
-                                        break;
-
-                                    case DcMsAmp1: // SPOT_IDC1
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-
-                                        current.idc1 = value;
-                                        logger.debug(strAmp, "SPOT_IDC1", Utils.toAmp(value), datetime);
-
-                                        current.flags |= type.getValue();
-                                        break;
-
-                                    case DcMsAmp2: // SPOT_IDC2
-                                        if (recordsize == 0) {
-                                            recordsize = 28;
-                                        }
-
-                                        current.idc2 = value;
-                                        logger.debug(strAmp, "SPOT_IDC2", Utils.toAmp(value), datetime);
-
-                                        current.flags |= type.getValue();
-                                        break;
-
-                                    case MeteringTotWhOut: // SPOT_ETOTAL
-                                    case MeteringDyWhOut: // SPOT_ETODAY
-                                        if (recordsize == 0) {
-                                            recordsize = 16;
-                                        }
-                                        current.setValue(lri, Utils.tokWh(value64));
-                                        current.flags |= type.getValue();
-                                        logger.debug(strkWh, current + lri.getCode(), Utils.tokWh(value64), datetime);
-                                        break;
-
-                                    case MeteringTotOpTms: // SPOT_OPERTM
-                                        if (recordsize == 0) {
-                                            recordsize = 16;
-                                        }
-                                        current.operationTime = value64;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strHour, "SPOT_OPERTM", Utils.toHour(value64), datetime);
-                                        break;
-
-                                    case MeteringTotFeedTms: // SPOT_FEEDTM
-                                        if (recordsize == 0) {
-                                            recordsize = 16;
-                                        }
-                                        current.feedInTime = value64;
-                                        current.flags |= type.getValue();
-                                        logger.debug(strHour, "SPOT_FEEDTM", Utils.toHour(value64), datetime);
-                                        break;
-
-                                    case NameplateLocation: // INV_NAME
-                                        if (recordsize == 0) {
-                                            recordsize = 40;
-                                        }
-                                        // This function gives us the time when the inverter was switched on
-                                        current.wakeupTime = datetime;
-                                        current.setDeviceName(Utils.getString(data, i + 8, 32));
-                                        current.flags |= type.getValue();
-                                        logger.debug("INV_NAME: {}   {}", current.getDeviceName(), datetime);
-                                        break;
-
-                                    case NameplatePkgRev: // INV_SWVER
-                                        if (recordsize == 0) {
-                                            recordsize = 40;
-                                        }
-                                        byte vType = data[i + 24];
-                                        byte vBuild = 0;
-                                        byte vMinor = 0;
-                                        byte vMajor = 0;
-
-                                        String releaseType;
-                                        if (vType > 5) {
-                                            releaseType = Byte.toString(vType);
-                                        } else {
-                                            releaseType = String.valueOf("NEABRS".charAt(vType)); // NOREV-EXPERIMENTAL-ALPHA-BETA-RELEASE-SPECIAL
-                                        }
-
-                                        vBuild = data[i + 25];
-                                        vMinor = data[i + 26];
-                                        vMajor = data[i + 27];
-                                        // Vmajor and Vminor = 0x12 should be printed as '12' and not '18' (BCD)
-                                        current.swVersion = String.format("%c%c.%c%c.%02d.%s", '0' + (vMajor >> 4),
-                                                '0' + (vMajor & 0x0F), '0' + (vMinor >> 4), '0' + (vMinor & 0x0F),
-                                                vBuild, releaseType);
-                                        current.flags |= type.getValue();
-                                        logger.debug("INV_SWVER: '{}' {}", current.swVersion, datetime);
-                                        break;
-
-                                    case NameplateModel: // INV_TYPE
-                                        if (recordsize == 0) {
-                                            recordsize = 40;
-                                        }
-                                        for (int idx = 8; idx < recordsize; idx += 4) {
-                                            int attribute = (int) (Utils.getLong(data, i + idx) & 0x00FFFFFF);
-                                            byte status = data[i + idx + 3];
-                                            if (attribute == 0xFFFFFE) {
-                                                break;
-                                            } // End of attributes
-                                            if (status == 1) {
-                                                current.setDeviceType(SmaDevice.getModel(attribute));
-                                                current.setValue(lri, current.getDeviceType());
-                                            }
-                                        }
-                                        current.flags |= type.getValue();
-                                        logger.debug("INV_TYPE: '{}' {}", current.getDeviceType(), datetime);
-                                        break;
-
-                                    /*
-                                     * case NameplateMainModel: //INV_CLASS
-                                     * if (recordsize == 0) recordsize = 40;
-                                     * for (int idx = 8; idx < recordsize; idx += 4)
-                                     * {
-                                     * unsigned long attribute = ((unsigned long)get_long(pcktBuf + i + idx)) &
-                                     * 0x00FFFFFF;
-                                     * unsigned char attValue = pcktBuf[i + idx + 3];
-                                     * if (attribute == 0xFFFFFE) break; //End of attributes
-                                     * if (attValue == 1)
-                                     * {
-                                     * current.DevClass = (DEVICECLASS)attribute;
-                                     * string devclass = tagdefs.getDesc(attribute);
-                                     * if (!devclass.empty())
-                                     * strncpy(current.DeviceClass, devclass.c_str(), sizeof(current.DeviceClass));
-                                     * else
-                                     * {
-                                     * strncpy(current.DeviceClass, "UNKNOWN CLASS", sizeof(current.DeviceClass));
-                                     * printf("Unknown Device Class. Report this issue at https://sbfspot.codeplex.com/workitem/list/basic with following info:\n"
-                                     * );
-                                     * printf("0x%08lX and Device Class=...\n", attribute);
-                                     * }
-                                     * }
-                                     * }
-                                     * current.flags |= type.getValue();
-                                     * if (DEBUG_NORMAL) printf("%-12s: '%s' %s", "INV_CLASS", current.DeviceClass,
-                                     * ctime(&datetime));
-                                     * break;
-                                     *
-                                     * case OperationHealth: //INV_STATUS:
-                                     * if (recordsize == 0) recordsize = 40;
-                                     * for (int idx = 8; idx < recordsize; idx += 4)
-                                     * {
-                                     * unsigned long attribute = ((unsigned long)get_long(pcktBuf + i + idx)) &
-                                     * 0x00FFFFFF;
-                                     * unsigned char attValue = pcktBuf[i + idx + 3];
-                                     * if (attribute == 0xFFFFFE) break; //End of attributes
-                                     * if (attValue == 1)
-                                     * current.DeviceStatus = attribute;
-                                     * }
-                                     * current.flags |= type.getValue();
-                                     * if (DEBUG_NORMAL) printf("%-12s: '%s' %s", "INV_STATUS",
-                                     * tagdefs.getDesc(current.DeviceStatus, "?").c_str(), ctime(&datetime));
-                                     * break;
-                                     *
-                                     * case OperationGriSwStt: //INV_GRIDRELAY
-                                     * if (recordsize == 0) recordsize = 40;
-                                     * for (int idx = 8; idx < recordsize; idx += 4)
-                                     * {
-                                     * unsigned long attribute = ((unsigned long)get_long(pcktBuf + i + idx)) &
-                                     * 0x00FFFFFF;
-                                     * unsigned char attValue = pcktBuf[i + idx + 3];
-                                     * if (attribute == 0xFFFFFE) break; //End of attributes
-                                     * if (attValue == 1)
-                                     * current.GridRelayStatus = attribute;
-                                     * }
-                                     * current.flags |= type.getValue();
-                                     * if (DEBUG_NORMAL) printf("%-12s: '%s' %s", "INV_GRIDRELAY",
-                                     * tagdefs.getDesc(current.GridRelayStatus, "?").c_str(), ctime(&datetime));
-                                     * break;
-                                     *
-                                     * case BatChaStt:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatChaStt = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatDiagCapacThrpCnt:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatDiagCapacThrpCnt = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatDiagTotAhIn:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatDiagTotAhIn = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatDiagTotAhOut:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatDiagTotAhOut = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatTmpVal:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatTmpVal = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatVol:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatVol = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case BatAmp:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.BatAmp = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     *
-                                     * case CoolsysTmpNom:
-                                     * if (recordsize == 0) recordsize = 28;
-                                     * current.Temperature = value;
-                                     * current.flags |= type.getValue();
-                                     * break;
-                                     */
-                                    default:
-                                        if (recordsize == 0) {
-                                            recordsize = 12;
-                                        }
+                                if (tags.size() > 0) {
+                                    current.setDeviceType(SmaDevice.getModel(tags.get(0)));
+                                    current.setValue(val.getLri(), current.getDeviceType());
+                                    current.flags |= type.getValue();
+                                    logger.debug("INV_TYPE: '{}' {}", current.getDeviceType(), val.getDatetime());
                                 }
                             }
+                                break;
+
+                            case NameplateMainModel: // INV_CLASS:
+                            {
+                                List<Integer> tags = val.getStatusTags();
+
+                                if (tags.size() > 0) {
+                                    current.setDevClass(SmaDevice.DeviceClass.fromOrdinal(tags.get(0)));
+                                    current.setValue(val.getLri(), current.getDevClass().name());
+                                    current.flags |= type.getValue();
+                                    logger.debug("INV_CLASS: {} {}", current.getDeviceStatus(), val.getDatetime());
+                                }
+                            }
+                                break;
+
+                            case OperationHealth: // INV_STATUS:
+                            {
+                                List<Integer> tags = val.getStatusTags();
+
+                                if (tags.size() > 0) {
+                                    current.setDeviceStatus(tags.get(0));
+                                    current.setValue(val.getLri(), current.getDeviceStatus());
+                                    current.flags |= type.getValue();
+                                    logger.debug("INV_STATUS: {} {}", current.getDeviceStatus(), val.getDatetime());
+                                }
+                            }
+                                break;
+
+                            default:
+                                logger.warn("Unhandled LRI {}", val.getLri().getCode());
                         }
                     }
+
                 } while (!validPcktID);
             }
 
         } catch (IOException e) {
             logger.debug("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
-        } finally {
-            // layer.close();
         }
         return true;
     }

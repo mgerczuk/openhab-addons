@@ -35,10 +35,10 @@ public class SMAPPPFrame {
         return 900000000 + randomGenerator.nextInt(100000000);
     }
 
-    public static LittleEndianByteArrayOutputStream writePppHeader(byte longwords, byte ctrl, short ctrl2,
-            short dstSUSyID, int dstSerial, short pcktID) throws IOException {
+    public static BinaryOutputStream writePppHeader(byte longwords, byte ctrl, short ctrl2, short dstSUSyID,
+            int dstSerial, short pcktID) throws IOException {
 
-        LittleEndianByteArrayOutputStream b = new LittleEndianByteArrayOutputStream();
+        BinaryOutputStream b = new BinaryOutputStream();
 
         b.writeByte(longwords);
         b.writeByte(ctrl);
