@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -15,7 +15,7 @@ package org.openhab.binding.sma.internal.layers;
 import java.io.IOException;
 
 /**
- * Stream for reading little-endian encoded binary data.
+ * Stream for reading little-endian encoded binary data from a byte buffer.
  *
  * The methods are similar to java.io.DataInput.
  *

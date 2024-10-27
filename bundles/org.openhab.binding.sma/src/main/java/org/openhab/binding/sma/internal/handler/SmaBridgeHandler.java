@@ -29,7 +29,7 @@ import org.openhab.binding.sma.internal.discovery.SmaDiscoveryService;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant;
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
-import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterDataType;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterQuery;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.util.SunriseSunset;
@@ -173,7 +173,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 logger.trace("Device Name:      {}", inv.getDeviceName());
                 // logger.info("Device Class: {}", inv.deviceClass);
                 logger.trace("Device Type:      {}", inv.getDeviceType());
-                logger.trace("Software Version: {}", inv.swVersion);
+                logger.trace("Software Version: {}", inv.getSwVersion());
                 logger.trace("Serial number:    {}", inv.getSerial().serial);
             }
             if (complete) {
@@ -274,12 +274,12 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         inverter.logon(SmaUserGroup.User, config.userPassword);
         inverter.setInverterTime();
 
-        InverterDataType[] required = new SmaDevice.InverterDataType[] { SmaDevice.InverterDataType.SoftwareVersion,
-                SmaDevice.InverterDataType.TypeLabel, SmaDevice.InverterDataType.DeviceStatus,
-                SmaDevice.InverterDataType.MaxACPower, SmaDevice.InverterDataType.EnergyProduction,
-                SmaDevice.InverterDataType.SpotACVoltage, SmaDevice.InverterDataType.SpotACTotalPower };
+        InverterQuery[] required = new SmaDevice.InverterQuery[] { SmaDevice.InverterQuery.SoftwareVersion,
+                SmaDevice.InverterQuery.TypeLabel, SmaDevice.InverterQuery.DeviceStatus,
+                SmaDevice.InverterQuery.MaxACPower, SmaDevice.InverterQuery.EnergyProduction,
+                SmaDevice.InverterQuery.SpotACVoltage, SmaDevice.InverterQuery.SpotACTotalPower };
 
-        ArrayList<InverterDataType> remaining = new ArrayList<InverterDataType>(Arrays.asList(required));
+        ArrayList<InverterQuery> remaining = new ArrayList<InverterQuery>(Arrays.asList(required));
 
         for (int retry = 0; retry < 3 && !remaining.isEmpty(); retry++) {
 
@@ -292,7 +292,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
         for (int i = 0; i < remaining.size(); i++) {
             if (srs.logErrors()) {
-                logger.error("getInverterData({}) failed", remaining.get(i).toString());
+                logger.warn("getInverterData({}) failed", remaining.get(i).toString());
             } else {
                 logger.debug("getInverterData({}) failed", remaining.get(i).toString());
             }

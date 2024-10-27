@@ -48,9 +48,9 @@ public class SMAPPPFrame {
         b.writeShort(AppSUSyID);
         b.writeInt(AppSerial);
         b.writeShort(ctrl2);
-        b.writeShort((short) 0);
-        b.writeShort((short) 0);
-        b.writeShort((short) (pcktID | 0x8000));
+        b.writeShort(0);
+        b.writeShort(0);
+        b.writeShort(pcktID | 0x8000);
 
         return b;
     }

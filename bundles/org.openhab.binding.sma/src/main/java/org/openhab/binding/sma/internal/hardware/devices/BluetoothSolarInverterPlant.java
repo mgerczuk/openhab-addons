@@ -18,7 +18,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.DeviceClass;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.InverterQuery;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BinaryInputStream;
 import org.openhab.binding.sma.internal.layers.BinaryOutputStream;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
@@ -27,13 +33,16 @@ import org.openhab.binding.sma.internal.layers.SMAFrame;
 import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
 import org.openhab.binding.sma.internal.layers.Utils;
 import org.openhab.binding.sma.internal.layers.Value;
+import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.StringType;
+import org.openhab.core.types.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
-public class BluetoothSolarInverterPlant extends SolarInverter {
+public class BluetoothSolarInverterPlant {
 
     private static final Logger logger = LoggerFactory.getLogger(BluetoothSolarInverterPlant.class);
 
@@ -46,6 +55,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
     protected Map<SmaSerial, BluetoothSolarInverterPlant.Data> invertersBySerial;
 
     protected Bluetooth layer;
+
+    private short pcktID = 1;
+
+    private static final String strkW = "{}: {} (kW)   {}";
+    private static final String strVolt = "{}: {} (V)   {}";
+    private static final String strAmp = "{}: {} (A)   {}";
+    private static final String strkWh = "{}: {} (kWh) {}";
+    private static final String strHour = "{}: {} (h)   {}";
 
     // protected String address;
 
@@ -101,7 +118,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             layer.sendSMAFrame(new SMAFrame(0x02, layer.getLocalAddress(), layer.getDestAddress(), //
                     new BinaryOutputStream()//
                             .writeInt(0x00700400)//
-                            .writeByte((byte) netID)//
+                            .writeByte(netID)//
                             .writeInt(0)//
                             .writeInt(1)//
                             .toByteArray()));
@@ -135,7 +152,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 if (data[ptr + 6] == 0x01 && data[ptr + 7] == 0x01) {
                     logger.debug("Device {}: found SMA Inverter @ {}", devcount, address);
                     Data inverter = new BluetoothSolarInverterPlant.Data(address);
-                    inverter.netID = netID;
+                    inverter.setNetID(netID);
                     inverters.add(inverter);
 
                 } else {
@@ -154,21 +171,21 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                 // connection between inverters
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new BinaryOutputStream()//
-                                .writeShort((short) 0x000A)//
-                                .writeByte((byte) 0xAC)//
+                                .writeShort(0x000A)//
+                                .writeByte(0xAC)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new BinaryOutputStream()//
-                                .writeShort((short) 0x0002)//
+                                .writeShort(0x0002)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
                 layer.sendSMAFrame(new SMAFrame(0x03, layer.getLocalAddress(), layer.getDestAddress(), //
                         new BinaryOutputStream()//
-                                .writeShort((short) 0x0001)//
-                                .writeByte((byte) 0x01)//
+                                .writeShort(0x0001)//
+                                .writeByte(0x01)//
                                 .toByteArray()));
                 layer.receiveSMAFrame(0x04);
 
@@ -235,7 +252,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                             SmaBluetoothAddress address = new SmaBluetoothAddress(data, ptr);
 
                             BluetoothSolarInverterPlant.Data inverter = new BluetoothSolarInverterPlant.Data(address);
-                            inverter.netID = netID;
+                            inverter.setNetID(netID);
                             inverters.add(inverter);
 
                             devcount++;
@@ -313,12 +330,10 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         }
     }
 
-    @Override
     public void exit() {
         layer.close();
     }
 
-    @Override
     public void logon(SmaUserGroup userGroup, String password) throws IOException {
         logger.debug("logon SMA Inverter");
 
@@ -380,7 +395,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         }
     }
 
-    @Override
     public void logoff() throws IOException {
         logger.debug("logoff SMA Inverter");
         try {
@@ -440,18 +454,14 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
         dest[5] = src[start + 0];
     }
 
-    public boolean getInverterData(InverterDataType type) {
+    public boolean getInverterData(InverterQuery type) {
         logger.debug("getInverterData({})\n", type);
 
-        if (type == InverterDataType.None) {
+        if (type == InverterQuery.None) {
             return false;
         }
 
         boolean validPcktID = false;
-
-        final int command = type.getCommand();
-        final int first = type.getFirst();
-        final int last = type.getLast();
 
         try {
 
@@ -459,9 +469,9 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                     SMAPPPFrame
                             .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, SMAPPPFrame.ANYSUSYID,
                                     SMAPPPFrame.ANYSERIAL, ++pcktID)//
-                            .writeInt(command)//
-                            .writeInt(first)//
-                            .writeInt(last)//
+                            .writeInt(type.getCommand())//
+                            .writeInt(type.getFirst())//
+                            .writeInt(type.getLast())//
                             .toPPPFrame()));
 
             for (int j = 0; j < inverters.size(); j++) {
@@ -498,7 +508,7 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                         if (val.getLri() == LRIDefinition.MeteringDyWhOut) {
                             // This function gives us the current
                             // inverter time
-                            current.inverterTime = val.getDatetime();
+                            current.setInverterTime(val.getDatetime());
                         }
 
                         switch (val.getLri()) {
@@ -506,32 +516,19 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
                                 // This function gives us the time when
                                 // the inverter was switched off
-                                current.sleepTime = val.getDatetime();
+                                current.setSleepTime(val.getDatetime());
                                 current.setValue(val.getLri(), Utils.tokW(val.getSLongValue()));
-                                current.flags |= type.getValue();
                                 logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getSLongValue()),
                                         val.getDatetime());
                                 break;
 
                             case OperationHealthSttOk: // INV_PACMAX1
-
-                                current.pmax1 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strWatt, "INV_PACMAX1", val.getULongValue(), val.getDatetime());
-                                break;
-
                             case OperationHealthSttWrn: // INV_PACMAX2
-
-                                current.pmax2 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strWatt, "INV_PACMAX2", val.getULongValue(), val.getDatetime());
-                                break;
-
                             case OperationHealthSttAlm: // INV_PACMAX3
 
-                                current.pmax3 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strWatt, "INV_PACMAX3", val.getULongValue(), val.getDatetime());
+                                current.setValue(val.getLri(), Utils.tokW(val.getULongValue()));
+                                logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getULongValue()),
+                                        val.getDatetime());
                                 break;
 
                             case GridMsPhVphsA: // SPOT_UAC1
@@ -540,38 +537,26 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
                                 if (val.getULongValue() != Value.ULong.NANVal) {
                                     current.setValue(val.getLri(), Utils.toVolt(val.getULongValue()));
-                                    current.flags |= type.getValue();
                                     logger.debug(strVolt, val.getLri().getCode(), Utils.toVolt(val.getULongValue()),
                                             val.getDatetime());
                                 }
                                 break;
 
                             case GridMsAphsA_1: // SPOT_IAC1
-
-                                current.iac1 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strAmp, "SPOT_IAC1", Utils.toAmp(val.getULongValue()), val.getDatetime());
-                                break;
-
                             case GridMsAphsB_1: // SPOT_IAC2
-
-                                current.iac2 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strAmp, "SPOT_IAC2", Utils.toAmp(val.getULongValue()), val.getDatetime());
-                                break;
-
                             case GridMsAphsC_1: // SPOT_IAC3
 
-                                current.iac3 = val.getULongValue();
-                                current.flags |= type.getValue();
-                                logger.debug(strAmp, "SPOT_IAC3", Utils.toAmp(val.getULongValue()), val.getDatetime());
+                                if (val.getULongValue() != Value.ULong.NANVal) {
+                                    current.setValue(val.getLri(), Utils.toAmp(val.getULongValue()));
+                                    logger.debug(strAmp, val.getLri().getCode(), Utils.toAmp(val.getULongValue()),
+                                            val.getDatetime());
+                                }
                                 break;
 
                             case MeteringTotWhOut: // SPOT_ETOTAL
                             case MeteringDyWhOut: // SPOT_ETODAY
 
                                 current.setValue(val.getLri(), Utils.tokWh(val.getULongValue()));
-                                current.flags |= type.getValue();
                                 logger.debug(strkWh, current + val.getLri().getCode(), Utils.tokWh(val.getULongValue()),
                                         val.getDatetime());
                                 break;
@@ -579,17 +564,15 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                             case NameplateLocation: // INV_NAME
 
                                 // This function gives us the time when the inverter was switched on
-                                current.wakeupTime = val.getDatetime();
+                                current.setWakeupTime(val.getDatetime());
                                 current.setDeviceName(val.getStringValue());
-                                current.flags |= type.getValue();
                                 logger.debug("INV_NAME: {}   {}", current.getDeviceName(), val.getDatetime());
                                 break;
 
                             case NameplatePkgRev: // INV_SWVER
 
-                                current.swVersion = Utils.toVersionString(val.getULongValue());
-                                current.flags |= type.getValue();
-                                logger.debug("INV_SWVER: '{}' {}", current.swVersion, val.getDatetime());
+                                current.setSwVersion(Utils.toVersionString(val.getULongValue()));
+                                logger.debug("INV_SWVER: '{}' {}", current.getSwVersion(), val.getDatetime());
                                 break;
 
                             case NameplateModel: // INV_TYPE
@@ -599,7 +582,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                 if (tags.size() > 0) {
                                     current.setDeviceType(SmaDevice.getModel(tags.get(0)));
                                     current.setValue(val.getLri(), current.getDeviceType());
-                                    current.flags |= type.getValue();
                                     logger.debug("INV_TYPE: '{}' {}", current.getDeviceType(), val.getDatetime());
                                 }
                             }
@@ -612,7 +594,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                 if (tags.size() > 0) {
                                     current.setDevClass(SmaDevice.DeviceClass.fromOrdinal(tags.get(0)));
                                     current.setValue(val.getLri(), current.getDevClass().name());
-                                    current.flags |= type.getValue();
                                     logger.debug("INV_CLASS: {} {}", current.getDeviceStatus(), val.getDatetime());
                                 }
                             }
@@ -625,7 +606,6 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
                                 if (tags.size() > 0) {
                                     current.setDeviceStatus(tags.get(0));
                                     current.setValue(val.getLri(), current.getDeviceStatus());
-                                    current.flags |= type.getValue();
                                     logger.debug("INV_STATUS: {} {}", current.getDeviceStatus(), val.getDatetime());
                                 }
                             }
@@ -648,11 +628,24 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
 
     @Override
     public String toString() {
-        return "BluetoothSolarInverterPlant [rootAddress=" + rootDeviceAdress + ", data=" + data + "]";
+        return "BluetoothSolarInverterPlant [rootAddress=" + rootDeviceAdress + "]";
     }
 
-    public static class Data extends SolarInverter.Data {
-        protected SmaBluetoothAddress address;
+    public static class Data {
+
+        private SmaBluetoothAddress address;
+        private String deviceName;
+        private SmaSerial serial;
+        private int netID;
+        private Date inverterTime;
+        private Date wakeupTime;
+        private Date sleepTime;
+        private String deviceType;
+        private DeviceClass devClass;
+        private String swVersion; // "03.01.05.R"
+        private int deviceStatus;
+
+        private HashMap<LRIDefinition, State> values = new HashMap<LRIDefinition, State>();
 
         public Data(SmaBluetoothAddress address) {
             super();
@@ -660,21 +653,114 @@ public class BluetoothSolarInverterPlant extends SolarInverter {
             this.address = address;
         }
 
-        public SmaBluetoothAddress getBTAddress() {
-            return this.address;
-        }
-
-        public void setBTAddress(SmaBluetoothAddress bTAddress) {
-            this.address = bTAddress;
-        }
-
         public String getBTAddressAsString() {
             return this.address.toString();
         }
 
+        public String getDeviceName() {
+            return deviceName;
+        }
+
+        public void setDeviceName(String deviceName) {
+            this.deviceName = deviceName;
+        }
+
+        public void setSerial(SmaSerial smaSerial) {
+            this.serial = smaSerial;
+        }
+
+        public SmaSerial getSerial() {
+            return this.serial;
+        }
+
+        public int getNetID() {
+            return netID;
+        }
+
+        public void setNetID(int netID) {
+            this.netID = netID;
+        }
+
+        public Date getInverterTime() {
+            return inverterTime;
+        }
+
+        public void setInverterTime(Date inverterTime) {
+            this.inverterTime = inverterTime;
+        }
+
+        public Date getWakeupTime() {
+            return wakeupTime;
+        }
+
+        public void setWakeupTime(Date wakeupTime) {
+            this.wakeupTime = wakeupTime;
+        }
+
+        public Date getSleepTime() {
+            return sleepTime;
+        }
+
+        public void setSleepTime(Date sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        public String getDeviceType() {
+            return deviceType;
+        }
+
+        public void setDeviceType(String deviceType) {
+            this.deviceType = deviceType;
+        }
+
+        public DeviceClass getDevClass() {
+            return devClass;
+        }
+
+        public void setDevClass(DeviceClass devClass) {
+            this.devClass = devClass;
+        }
+
+        public String getSwVersion() {
+            return swVersion;
+        }
+
+        public void setSwVersion(String swVersion) {
+            this.swVersion = swVersion;
+        }
+
+        public int getDeviceStatus() {
+            return deviceStatus;
+        }
+
+        public void setDeviceStatus(int deviceStatus) {
+            this.deviceStatus = deviceStatus;
+        }
+
+        public Set<Entry<LRIDefinition, State>> getEntries() {
+            return values.entrySet();
+        }
+
+        public boolean isValid(LRIDefinition lri) {
+            return values.containsKey(lri);
+        }
+
+        public State getState(LRIDefinition lri) {
+            return values.get(lri);
+        }
+
+        public void setValue(LRIDefinition lri, double value) {
+            values.put(lri, new DecimalType(value));
+        }
+
+        public void setValue(LRIDefinition lri, String value) {
+            values.put(lri, new StringType(value));
+        }
+
         @Override
         public String toString() {
-            return "Data [address=" + address + ", " + super.toString() + "]";
+            return "Data [address=" + address + ", " + "deviceName=" + deviceName + ", netID=" + netID + ", serial="
+                    + serial + "]";
         }
     }
 }

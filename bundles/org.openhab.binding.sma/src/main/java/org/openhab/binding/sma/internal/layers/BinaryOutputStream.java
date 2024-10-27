@@ -13,32 +13,29 @@
 package org.openhab.binding.sma.internal.layers;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 
 /**
- * Stream for writing little-endian encoded binary data.
+ * Stream for writing little-endian encoded binary data to a byte buffer.
  *
  * The methods are similar to java.io.DataOutput but allow method chaining.
  *
  * @author Martin Gerczuk - Initial contribution
  */
-public class BinaryOutputStream extends FilterOutputStream {
+public class BinaryOutputStream {
 
-    ByteArrayOutputStream os;
+    private final ByteArrayOutputStream os;
 
     public BinaryOutputStream() {
         this(new ByteArrayOutputStream());
     }
 
     private BinaryOutputStream(ByteArrayOutputStream os) {
-        super(new DataOutputStream(os));
         this.os = os;
     }
 
     public byte[] toByteArray() throws IOException {
-        close();
+        os.close();
         return os.toByteArray();
     }
 
@@ -46,68 +43,35 @@ public class BinaryOutputStream extends FilterOutputStream {
         return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL, os.toByteArray());
     }
 
-    public BinaryOutputStream writeBoolean(boolean v) throws IOException {
-        ((DataOutputStream) out).writeBoolean(v);
-        return this;
-    }
-
     public BinaryOutputStream writeByte(int v) throws IOException {
-        ((DataOutputStream) out).writeByte(v);
+        os.write(v);
         return this;
     }
 
     public BinaryOutputStream writeShort(int v) throws IOException {
-        out.write(0xFF & v);
-        out.write(0xFF & (v >> 8));
-        return this;
-    }
-
-    public BinaryOutputStream writeChar(int v) throws IOException {
-        writeShort(v);
+        os.write(0xFF & v);
+        os.write(0xFF & (v >> 8));
         return this;
     }
 
     public BinaryOutputStream writeInt(int v) throws IOException {
-        out.write(0xFF & v);
-        out.write(0xFF & (v >> 8));
-        out.write(0xFF & (v >> 16));
-        out.write(0xFF & (v >> 24));
+        os.write(0xFF & v);
+        os.write(0xFF & (v >> 8));
+        os.write(0xFF & (v >> 16));
+        os.write(0xFF & (v >> 24));
         return this;
     }
 
-    // public LittleEndianByteArrayOutputStream writeLong(long v) throws IOException {
-    // throw new IOException("LittleEndianDataOutputStream.writeLong not supported");
-    // }
-    //
-    // public LittleEndianByteArrayOutputStream writeFloat(float v) throws IOException {
-    // writeInt(Float.floatToIntBits(v));
-    // return this;
-    // }
-    //
-    // public LittleEndianByteArrayOutputStream writeDouble(double v) throws IOException {
-    // writeLong(Double.doubleToLongBits(v));
-    // return this;
-    // }
-
     public BinaryOutputStream writeBytes(String s) throws IOException {
-        ((DataOutputStream) out).writeBytes(s);
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
+            os.write((byte) s.charAt(i));
+        }
         return this;
     }
 
     public BinaryOutputStream writeBytes(byte[] data) throws IOException {
-        ((DataOutputStream) out).write(data);
+        os.write(data);
         return this;
     }
-
-    // public LittleEndianByteArrayOutputStream writeChars(String s) throws IOException {
-    // for (int i = 0; i < s.length(); i++) {
-    // writeChar(s.charAt(i));
-    // }
-    // return this;
-    // }
-    //
-    // public LittleEndianByteArrayOutputStream writeUTF(String s) throws IOException {
-    // ((DataOutputStream) out).writeUTF(s);
-    // return this;
-    // }
 }

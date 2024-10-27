@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
@@ -627,49 +626,55 @@ public class BluetoothSolarInverterPlantTest {
             plant.setInverterTime();
 
             assertEquals(2, plant.getInverters().size());
-            Data[] invArr = plant.getInverters().toArray(new BluetoothSolarInverterPlant.Data[0]);
-
-            BluetoothSolarInverterPlant.Data data99 = Arrays.stream(invArr)
+            BluetoothSolarInverterPlant.Data data99 = plant.getInverters().stream()
                     .filter(i -> i.getSerial().equals(new SmaSerial((short) 99, 2001299653L))).findFirst().orElse(null);
             assertNotNull(data99);
-            BluetoothSolarInverterPlant.Data data113 = Arrays.stream(invArr)
+            BluetoothSolarInverterPlant.Data data113 = plant.getInverters().stream()
                     .filter(i -> i.getSerial().equals(new SmaSerial((short) 113, 2100246573))).findFirst().orElse(null);
             assertNotNull(data113);
 
-            plant.getInverterData(SmaDevice.InverterDataType.SpotACTotalPower);
+            plant.getInverterData(SmaDevice.InverterQuery.SpotACTotalPower);
 
             compareLriValue(data99, SmaDevice.LRIDefinition.GridMsTotW, 2.536);
             compareLriValue(data113, SmaDevice.LRIDefinition.GridMsTotW, 1.982);
 
-            plant.getInverterData(SmaDevice.InverterDataType.SpotACVoltage);
+            plant.getInverterData(SmaDevice.InverterQuery.SpotACVoltage);
 
             compareLriValue(data99, SmaDevice.LRIDefinition.GridMsPhVphsA, 238.0);
+            compareLriValue(data99, SmaDevice.LRIDefinition.GridMsAphsA_1, 10.601);
+            assertFalse(data99.isValid(SmaDevice.LRIDefinition.GridMsPhVphsB));
+            assertFalse(data99.isValid(SmaDevice.LRIDefinition.GridMsAphsB_1));
+            assertFalse(data99.isValid(SmaDevice.LRIDefinition.GridMsPhVphsC));
+            assertFalse(data99.isValid(SmaDevice.LRIDefinition.GridMsAphsC_1));
             compareLriValue(data113, SmaDevice.LRIDefinition.GridMsPhVphsA, 237.86);
+            compareLriValue(data113, SmaDevice.LRIDefinition.GridMsAphsA_1, 8.335);
             assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsPhVphsB)); // Value is NAN!
+            assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsAphsB_1)); // Value is NAN!
             assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsPhVphsC)); // Value is NAN!
+            assertFalse(data113.isValid(SmaDevice.LRIDefinition.GridMsAphsC_1)); // Value is NAN!
 
-            plant.getInverterData(SmaDevice.InverterDataType.EnergyProduction);
+            plant.getInverterData(SmaDevice.InverterQuery.EnergyProduction);
 
             compareLriValue(data99, SmaDevice.LRIDefinition.MeteringTotWhOut, 51542.483);
             compareLriValue(data99, SmaDevice.LRIDefinition.MeteringDyWhOut, 5.569);
             compareLriValue(data113, SmaDevice.LRIDefinition.MeteringTotWhOut, 40198.533);
             compareLriValue(data113, SmaDevice.LRIDefinition.MeteringDyWhOut, 4.316);
 
-            plant.getInverterData(SmaDevice.InverterDataType.MaxACPower);
+            plant.getInverterData(SmaDevice.InverterQuery.MaxACPower);
 
-            assertEquals(3600L, data99.pmax1);
-            assertEquals(0L, data99.pmax2);
-            assertEquals(0L, data99.pmax3);
-            assertEquals(3000L, data113.pmax1);
-            assertEquals(0L, data113.pmax2);
-            assertEquals(0L, data113.pmax3);
+            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttOk, 3.6);
+            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttWrn, 0.0);
+            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttAlm, 0.0);
+            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttOk, 3.0);
+            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttWrn, 0.0);
+            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttAlm, 0.0);
 
-            plant.getInverterData(SmaDevice.InverterDataType.DeviceStatus);
+            plant.getInverterData(SmaDevice.InverterQuery.DeviceStatus);
 
             compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealth, 307);
             compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealth, 307);
 
-            plant.getInverterData(SmaDevice.InverterDataType.TypeLabel);
+            plant.getInverterData(SmaDevice.InverterQuery.TypeLabel);
 
             assertEquals("SN: 2001299653", data99.getDeviceName());
             assertEquals(DeviceClass.SolarInverter, data99.getDevClass());
@@ -678,10 +683,10 @@ public class BluetoothSolarInverterPlantTest {
             assertEquals(DeviceClass.SolarInverter, data113.getDevClass());
             assertEquals("SB 3000TL-20", data113.getDeviceType());
 
-            plant.getInverterData(SmaDevice.InverterDataType.SoftwareVersion);
+            plant.getInverterData(SmaDevice.InverterQuery.SoftwareVersion);
 
-            assertEquals("12.09.122.R", data99.swVersion);
-            assertEquals("02.08.01.R", data113.swVersion);
+            assertEquals("12.09.122.R", data99.getSwVersion());
+            assertEquals("02.08.01.R", data113.getSwVersion());
 
             plant.logoff();
         } catch (IOException e) {
@@ -880,7 +885,7 @@ public class BluetoothSolarInverterPlantTest {
         try {
             plant.logon(SmaUserGroup.User, "0000");
             plant.setInverterTime();
-            plant.getInverterData(SmaDevice.InverterDataType.SoftwareVersion);
+            plant.getInverterData(SmaDevice.InverterQuery.SoftwareVersion);
         } catch (IOException e) {
             fail(e.getMessage());
         }
