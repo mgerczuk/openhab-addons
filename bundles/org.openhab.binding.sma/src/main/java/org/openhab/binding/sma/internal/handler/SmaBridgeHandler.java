@@ -34,7 +34,8 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.util.SunriseSunset;
 import org.openhab.core.config.discovery.DiscoveryService;
-import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
@@ -222,13 +223,13 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
         for (BluetoothSolarInverterPlant.Data inv : inverters) {
 
             if (eTotalValid && inv.isValid(SmaDevice.LRIDefinition.MeteringTotWhOut)) {
-                eTotal += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
+                eTotal += ((QuantityType<?>) inv.getState(SmaDevice.LRIDefinition.MeteringTotWhOut)).doubleValue();
             } else {
                 eTotalValid = false;
             }
 
             if (eTodayValid && inv.isValid(SmaDevice.LRIDefinition.MeteringDyWhOut)) {
-                eToday += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.MeteringDyWhOut)).doubleValue();
+                eToday += ((QuantityType<?>) inv.getState(SmaDevice.LRIDefinition.MeteringDyWhOut)).doubleValue();
             } else {
                 eTodayValid = false;
             }
@@ -236,7 +237,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             for (SmaDevice.LRIDefinition lriDef : new SmaDevice.LRIDefinition[] { SmaDevice.LRIDefinition.GridMsPhVphsA,
                     SmaDevice.LRIDefinition.GridMsPhVphsB, SmaDevice.LRIDefinition.GridMsPhVphsC }) {
                 if (inv.isValid(lriDef)) {
-                    double uac = ((DecimalType) inv.getState(lriDef)).doubleValue();
+                    double uac = ((QuantityType<?>) inv.getState(lriDef)).doubleValue();
                     if (uac > uacMax) {
                         uacMax = uac;
                     }
@@ -245,26 +246,26 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             }
 
             if (eTodayValid && inv.isValid(SmaDevice.LRIDefinition.GridMsTotW)) {
-                totalPac += ((DecimalType) inv.getState(SmaDevice.LRIDefinition.GridMsTotW)).doubleValue();
+                totalPac += ((QuantityType<?>) inv.getState(SmaDevice.LRIDefinition.GridMsTotW)).doubleValue();
             } else {
                 totalPacValid = false;
             }
         }
 
         if (eTotalValid) {
-            updateState(new ChannelUID(getThing().getUID(), "etotal"), new DecimalType(eTotal));
+            updateState(new ChannelUID(getThing().getUID(), "etotal"), new QuantityType<>(eTotal, Units.WATT_HOUR));
         }
 
         if (eTodayValid) {
-            updateState(new ChannelUID(getThing().getUID(), "etoday"), new DecimalType(eToday));
+            updateState(new ChannelUID(getThing().getUID(), "etoday"), new QuantityType<>(eToday, Units.WATT_HOUR));
         }
 
         if (uacMaxValid) {
-            updateState(new ChannelUID(getThing().getUID(), "uacmax"), new DecimalType(uacMax));
+            updateState(new ChannelUID(getThing().getUID(), "uacmax"), new QuantityType<>(uacMax, Units.VOLT));
         }
 
         if (totalPacValid) {
-            updateState(new ChannelUID(getThing().getUID(), "totalpac"), new DecimalType(totalPac));
+            updateState(new ChannelUID(getThing().getUID(), "totalpac"), new QuantityType<>(totalPac, Units.WATT));
         }
     }
 

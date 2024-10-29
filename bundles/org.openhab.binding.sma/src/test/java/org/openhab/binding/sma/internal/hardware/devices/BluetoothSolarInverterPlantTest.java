@@ -25,6 +25,8 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BluetoothDebug;
 import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
 import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.types.State;
 
 /**
  * @author Martin Gerczuk - Initial contribution
@@ -635,8 +637,8 @@ public class BluetoothSolarInverterPlantTest {
 
             plant.getInverterData(SmaDevice.InverterQuery.SpotACTotalPower);
 
-            compareLriValue(data99, SmaDevice.LRIDefinition.GridMsTotW, 2.536);
-            compareLriValue(data113, SmaDevice.LRIDefinition.GridMsTotW, 1.982);
+            compareLriValue(data99, SmaDevice.LRIDefinition.GridMsTotW, 2536);
+            compareLriValue(data113, SmaDevice.LRIDefinition.GridMsTotW, 1982);
 
             plant.getInverterData(SmaDevice.InverterQuery.SpotACVoltage);
 
@@ -655,17 +657,17 @@ public class BluetoothSolarInverterPlantTest {
 
             plant.getInverterData(SmaDevice.InverterQuery.EnergyProduction);
 
-            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringTotWhOut, 51542.483);
-            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringDyWhOut, 5.569);
-            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringTotWhOut, 40198.533);
-            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringDyWhOut, 4.316);
+            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringTotWhOut, 51542483);
+            compareLriValue(data99, SmaDevice.LRIDefinition.MeteringDyWhOut, 5569);
+            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringTotWhOut, 40198533);
+            compareLriValue(data113, SmaDevice.LRIDefinition.MeteringDyWhOut, 4316);
 
             plant.getInverterData(SmaDevice.InverterQuery.MaxACPower);
 
-            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttOk, 3.6);
+            compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttOk, 3600);
             compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttWrn, 0.0);
             compareLriValue(data99, SmaDevice.LRIDefinition.OperationHealthSttAlm, 0.0);
-            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttOk, 3.0);
+            compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttOk, 3000);
             compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttWrn, 0.0);
             compareLriValue(data113, SmaDevice.LRIDefinition.OperationHealthSttAlm, 0.0);
 
@@ -698,7 +700,15 @@ public class BluetoothSolarInverterPlantTest {
         final double epsilon = 1e-6;
 
         assertTrue(data.isValid(lri), lri.name() + " is not valid");
-        double actual = ((DecimalType) data.getState(lri)).doubleValue();
+        double actual = 0.0;
+        State state = data.getState(lri);
+        if (state instanceof DecimalType) {
+            actual = ((DecimalType) state).doubleValue();
+        } else if (state instanceof QuantityType) {
+            actual = ((QuantityType<?>) state).doubleValue();
+        } else {
+            fail("unexpected State type");
+        }
         assertTrue(Math.abs(expected - actual) < epsilon,
                 lri.name() + " differs. Expected " + Double.toString(expected) + ", was " + Double.toString(actual));
     }

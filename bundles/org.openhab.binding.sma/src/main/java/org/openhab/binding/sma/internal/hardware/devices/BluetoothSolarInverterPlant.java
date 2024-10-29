@@ -34,7 +34,9 @@ import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
 import org.openhab.binding.sma.internal.layers.Utils;
 import org.openhab.binding.sma.internal.layers.Value;
 import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
+import org.openhab.core.library.unit.Units;
 import org.openhab.core.types.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -485,7 +487,6 @@ public class BluetoothSolarInverterPlant {
                     BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
                     if (current == null) {
-                        logger.warn("Unexpected: {} not found!", serial.toString());
                         continue;
                     }
 
@@ -517,7 +518,7 @@ public class BluetoothSolarInverterPlant {
                                 // This function gives us the time when
                                 // the inverter was switched off
                                 current.setSleepTime(val.getDatetime());
-                                current.setValue(val.getLri(), Utils.tokW(val.getSLongValue()));
+                                current.setValue(val.getLri(), new QuantityType<>(val.getSLongValue(), Units.WATT));
                                 logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getSLongValue()),
                                         val.getDatetime());
                                 break;
@@ -526,7 +527,7 @@ public class BluetoothSolarInverterPlant {
                             case OperationHealthSttWrn: // INV_PACMAX2
                             case OperationHealthSttAlm: // INV_PACMAX3
 
-                                current.setValue(val.getLri(), Utils.tokW(val.getULongValue()));
+                                current.setValue(val.getLri(), new QuantityType<>(val.getULongValue(), Units.WATT));
                                 logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getULongValue()),
                                         val.getDatetime());
                                 break;
@@ -536,7 +537,8 @@ public class BluetoothSolarInverterPlant {
                             case GridMsPhVphsC: // SPOT_UAC3
 
                                 if (val.getULongValue() != Value.ULong.NANVal) {
-                                    current.setValue(val.getLri(), Utils.toVolt(val.getULongValue()));
+                                    current.setValue(val.getLri(),
+                                            new QuantityType<>(val.getULongValue() / 100.0, Units.VOLT));
                                     logger.debug(strVolt, val.getLri().getCode(), Utils.toVolt(val.getULongValue()),
                                             val.getDatetime());
                                 }
@@ -547,7 +549,8 @@ public class BluetoothSolarInverterPlant {
                             case GridMsAphsC_1: // SPOT_IAC3
 
                                 if (val.getULongValue() != Value.ULong.NANVal) {
-                                    current.setValue(val.getLri(), Utils.toAmp(val.getULongValue()));
+                                    current.setValue(val.getLri(),
+                                            new QuantityType<>(val.getULongValue() / 1000.0, Units.AMPERE));
                                     logger.debug(strAmp, val.getLri().getCode(), Utils.toAmp(val.getULongValue()),
                                             val.getDatetime());
                                 }
@@ -556,7 +559,8 @@ public class BluetoothSolarInverterPlant {
                             case MeteringTotWhOut: // SPOT_ETOTAL
                             case MeteringDyWhOut: // SPOT_ETODAY
 
-                                current.setValue(val.getLri(), Utils.tokWh(val.getULongValue()));
+                                current.setValue(val.getLri(),
+                                        new QuantityType<>(val.getULongValue(), Units.WATT_HOUR));
                                 logger.debug(strkWh, current + val.getLri().getCode(), Utils.tokWh(val.getULongValue()),
                                         val.getDatetime());
                                 break;
@@ -605,7 +609,7 @@ public class BluetoothSolarInverterPlant {
 
                                 if (tags.size() > 0) {
                                     current.setDeviceStatus(tags.get(0));
-                                    current.setValue(val.getLri(), current.getDeviceStatus());
+                                    current.setValue(val.getLri(), new DecimalType(current.getDeviceStatus()));
                                     logger.debug("INV_STATUS: {} {}", current.getDeviceStatus(), val.getDatetime());
                                 }
                             }
@@ -749,8 +753,8 @@ public class BluetoothSolarInverterPlant {
             return values.get(lri);
         }
 
-        public void setValue(LRIDefinition lri, double value) {
-            values.put(lri, new DecimalType(value));
+        public void setValue(LRIDefinition lri, State value) {
+            values.put(lri, value);
         }
 
         public void setValue(LRIDefinition lri, String value) {

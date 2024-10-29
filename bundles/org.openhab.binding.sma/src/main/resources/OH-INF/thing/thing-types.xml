@@ -58,46 +58,46 @@
 	</thing-type>
 	<!-- Sample Channel Type -->
 	<channel-type id="etoday">
-		<item-type>Number</item-type>
+		<item-type>Number:Energy</item-type>
 		<label>EToday</label>
 		<description>Production today [kWh]</description>
-		<state readOnly="true" pattern="%.3f kWh"/>
+		<state readOnly="true" pattern="%.3f %unit%"/>
 	</channel-type>
 	<channel-type id="etotal">
-		<item-type>Number</item-type>
+		<item-type>Number:Energy</item-type>
 		<label>ETotal</label>
 		<description>Production total [kWh]</description>
-		<state readOnly="true" pattern="%.3f kWh"/>
+		<state readOnly="true" pattern="%.3f %unit%"/>
 	</channel-type>
 	<channel-type id="uac1">
-		<item-type>Number</item-type>
+		<item-type>Number:ElectricPotential</item-type>
 		<label>UAC1</label>
 		<description>Voltage AC1</description>
-		<state readOnly="true" pattern="%.2f V"/>
+		<state readOnly="true" pattern="%.2f %unit%"/>
 	</channel-type>
 	<channel-type id="uac2">
-		<item-type>Number</item-type>
+		<item-type>Number:ElectricPotential</item-type>
 		<label>UAC2</label>
 		<description>Voltage AC2</description>
-		<state readOnly="true" pattern="%.2f V"/>
+		<state readOnly="true" pattern="%.2f %unit%"/>
 	</channel-type>
 	<channel-type id="uac3">
-		<item-type>Number</item-type>
+		<item-type>Number:ElectricPotential</item-type>
 		<label>UAC3</label>
 		<description>Voltage AC3</description>
-		<state readOnly="true" pattern="%.2f V"/>
+		<state readOnly="true" pattern="%.2f %unit%"/>
 	</channel-type>
 	<channel-type id="uacmax">
-		<item-type>Number</item-type>
+		<item-type>Number:ElectricPotential</item-type>
 		<label>UACMax</label>
 		<description>Voltage AC Max</description>
-		<state readOnly="true" pattern="%.2f V"/>
+		<state readOnly="true" pattern="%.2f %unit%"/>
 	</channel-type>
 	<channel-type id="totalpac">
-		<item-type>Number</item-type>
+		<item-type>Number:Power</item-type>
 		<label>TotalPAC</label>
 		<description>Total power AC</description>
-		<state readOnly="true" pattern="%.3f kW"/>
+		<state readOnly="true" pattern="%.3f %unit%"/>
 	</channel-type>
 	<channel-type id="invtype">
 		<item-type>String</item-type>
