@@ -12,12 +12,15 @@
  */
 package org.openhab.binding.sma.internal.layers;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class Utils {
 
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    protected static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
     public static String bytesToHex(byte[] bytes) {
         return bytesToHex(bytes, bytes.length, ' ');
@@ -31,25 +34,13 @@ public class Utils {
         return bytesToHex(bytes, bytes.length, delimiter);
     }
 
-    public static final String toHex(byte b) {
-        return new String(new char[] { hexArray[(b & 0xf0) >>> 4], hexArray[b & 0x0F] });
-    }
-
-    public static final String toHex(short s) {
-        return toHex((byte) (s >>> 8)) + toHex((byte) (s & 0xff));
-    }
-
-    public static final String toHex(int i) {
-        return toHex((short) (i >>> 16)) + toHex((short) (i & 0xffff));
-    }
-
     public static final String bytesToHex(byte[] bytes, int length, char delimiter) {
         StringBuilder sb = new StringBuilder();
         sb.append("--------: 00 01 02 03 04 05 06 07 08 09\n00000000: ");
         for (int j = 0; j < length; j++) {
             int v = bytes[j] & 0xFF;
-            sb.append(hexArray[v >>> 4]);
-            sb.append(hexArray[v & 0x0F]);
+            sb.append(HEX[v >>> 4]);
+            sb.append(HEX[v & 0x0F]);
 
             if (j % 10 == 9) {
                 sb.append(String.format("\n%08d: ", j + 1));
@@ -66,8 +57,8 @@ public class Utils {
         int i = 0;
         for (int j = 0; j < length; j++) {
             int v = bytes[j] & 0xFF;
-            hexChars[i++] = hexArray[v >>> 4];
-            hexChars[i++] = hexArray[v & 0x0F];
+            hexChars[i++] = HEX[v >>> 4];
+            hexChars[i++] = HEX[v & 0x0F];
         }
         return new String(hexChars);
     }

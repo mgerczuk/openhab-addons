@@ -12,9 +12,13 @@
  */
 package org.openhab.binding.sma.internal.hardware.devices;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SmaBluetoothAddress {
     public static final SmaBluetoothAddress BROADCAST = new SmaBluetoothAddress("FF:FF:FF:FF:FF:FF");
 
@@ -79,8 +83,8 @@ public class SmaBluetoothAddress {
         int i = 0;
         for (int j = 5; j >= 0; j--) {
             int v = address[j] & 0xFF;
-            hexChars[i++] = hexArray[(v & 0xF0) >>> 4];
-            hexChars[i++] = hexArray[v & 0x0F];
+            hexChars[i++] = HEX[v >>> 4];
+            hexChars[i++] = HEX[v & 0x0F];
             if (j > 0) {
                 hexChars[i++] = ':';
             }
@@ -93,14 +97,14 @@ public class SmaBluetoothAddress {
         int i = 0;
         for (int j = 5; j >= 0; j--) {
             int v = address[j] & 0xFF;
-            hexChars[i++] = hexArray[v >>> 4];
-            hexChars[i++] = hexArray[v & 0x0F];
+            hexChars[i++] = HEX[v >>> 4];
+            hexChars[i++] = HEX[v & 0x0F];
         }
         return "btspp://" + (new String(hexChars)) + ":" + this.port;
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (obj instanceof SmaBluetoothAddress) {
             SmaBluetoothAddress other = (SmaBluetoothAddress) obj;
             for (int i = 0; i < 6; i++) {
@@ -131,5 +135,5 @@ public class SmaBluetoothAddress {
         return data;
     }
 
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    protected static final char[] HEX = "0123456789ABCDEF".toCharArray();
 }

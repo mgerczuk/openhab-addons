@@ -16,11 +16,14 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * Stream writing HDLC data
  *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class EscapeOutputStream extends FilterOutputStream {
 
     public EscapeOutputStream(OutputStream out) {
@@ -29,7 +32,6 @@ public class EscapeOutputStream extends FilterOutputStream {
 
     @Override
     public void write(int v) throws IOException {
-
         if (needsEscape(v)) {
             super.write(PPPFrame.HDLC_ESC);
             super.write(v ^ 0x20);

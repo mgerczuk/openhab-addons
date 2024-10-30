@@ -14,7 +14,8 @@ package org.openhab.binding.sma.internal.handler;
 
 import java.util.Map.Entry;
 
-import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.sma.internal.SmaInverterConfiguration;
 import org.openhab.binding.sma.internal.hardware.devices.BluetoothSolarInverterPlant.Data;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
@@ -34,12 +35,12 @@ import org.slf4j.LoggerFactory;
  *
  * @author Martin Gerczuk - Initial contribution
  */
-// @NonNullByDefault
+@NonNullByDefault
 public class SmaHandler extends BaseThingHandler {
 
     private final Logger logger = LoggerFactory.getLogger(SmaHandler.class);
     private int susyId;
-    private SmaBridgeHandler bridgeHandler;
+    private @Nullable SmaBridgeHandler bridgeHandler;
 
     public SmaHandler(Thing thing) {
         super(thing);
@@ -48,7 +49,7 @@ public class SmaHandler extends BaseThingHandler {
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         // if (channelUID.getId().equals(CHANNEL_ETODAY)) {
-        // TODO: handle command
+        // handle command
 
         // Note: if communication with thing fails for some reason,
         // indicate that by setting the status with detail information
@@ -59,16 +60,17 @@ public class SmaHandler extends BaseThingHandler {
 
     @Override
     public void initialize() {
-
         Bridge bridge = getBridge();
         bridgeHandler = bridge == null ? null : (SmaBridgeHandler) bridge.getHandler();
 
         SmaInverterConfiguration config = getConfigAs(SmaInverterConfiguration.class);
         susyId = config.susyid;
 
-        bridgeHandler.registerInverter(susyId, this);
+        if (bridgeHandler != null) {
+            bridgeHandler.registerInverter(susyId, this);
+        }
 
-        // TODO: Initialize the thing. If done set status to ONLINE to indicate proper working.
+        // Initialize the thing. If done set status to ONLINE to indicate proper working.
         // Long running initialization should be done asynchronously in background.
         // updateStatus(ThingStatus.INITIALIZING);
 
@@ -103,7 +105,7 @@ public class SmaHandler extends BaseThingHandler {
     }
 
     @Override
-    public @NonNull String toString() {
+    public String toString() {
         return String.format("SmaHandler {suSyID = %d}", susyId);
     }
 }

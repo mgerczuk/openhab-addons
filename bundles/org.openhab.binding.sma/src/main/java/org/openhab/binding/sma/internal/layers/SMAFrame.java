@@ -17,21 +17,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SMAFrame {
 
     // length of package header
     private static final int HEADERLENGTH = 18;
 
-    private int control;
-    private SmaBluetoothAddress sourceAddress;
-    private SmaBluetoothAddress destinationAddress;
+    private final int control;
+    private final SmaBluetoothAddress sourceAddress;
+    private final SmaBluetoothAddress destinationAddress;
 
-    byte[] payload;
+    private final byte[] payload;
 
     public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
         this.control = control;
@@ -68,7 +70,6 @@ public class SMAFrame {
     }
 
     public byte[] getFrame() {
-
         int totalLength = HEADERLENGTH + payload.length;
         byte[] buffer = new byte[totalLength];
 
@@ -94,7 +95,6 @@ public class SMAFrame {
     }
 
     public static SMAFrame read(InputStream is) throws IOException {
-
         byte[] header = new byte[HEADERLENGTH];
         if (is.read(header) < header.length) {
             throw new IOException("EOF");

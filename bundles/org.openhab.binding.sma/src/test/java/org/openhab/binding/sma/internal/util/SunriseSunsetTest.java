@@ -16,15 +16,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Calendar;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SunriseSunsetTest {
 
-    private static final double longitude = 8.1258;
-    private static final double latitude = 48.6501;
+    private static final double LONGITUDE = 8.1258;
+    private static final double LATITUDE = 48.6501;
 
     Calendar createCalendar(int year, int month0, int day, int hour, int minute, int second) {
         Calendar calendar = Calendar.getInstance();
@@ -40,7 +42,7 @@ public class SunriseSunsetTest {
 
     @Test
     void testSunrise() {
-        SunriseSunset ss = new SunriseSunset(latitude, longitude);
+        SunriseSunset ss = new SunriseSunset(LATITUDE, LONGITUDE);
 
         Calendar sunrise = ss.getSunrise(createCalendar(2024, 8, 24, 6, 0, 0));
         assertTrue(sunrise.equals(createCalendar(2024, 8, 24, 7, 18, 0)));
@@ -48,7 +50,7 @@ public class SunriseSunsetTest {
 
     @Test
     void testSunset() {
-        SunriseSunset ss = new SunriseSunset(latitude, longitude);
+        SunriseSunset ss = new SunriseSunset(LATITUDE, LONGITUDE);
 
         Calendar sunset = ss.getSunset(createCalendar(2024, 8, 24, 6, 0, 0));
         assertTrue(sunset.equals(createCalendar(2024, 8, 24, 19, 20, 0)));
@@ -56,7 +58,7 @@ public class SunriseSunsetTest {
 
     private boolean isDark(Calendar now) {
         // code from SmaBridgeHandler.run()
-        SunriseSunset srs = new SunriseSunset(latitude, longitude);
+        SunriseSunset srs = new SunriseSunset(LATITUDE, LONGITUDE);
         Calendar sunrise = srs.getSunrise(now);
         Calendar sunset = srs.getSunset(now);
         sunset.add(Calendar.MINUTE, 5);

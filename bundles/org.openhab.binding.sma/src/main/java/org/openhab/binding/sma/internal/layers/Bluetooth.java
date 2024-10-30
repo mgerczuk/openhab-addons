@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Bluetooth {
 
-    private static final Logger logger = LoggerFactory.getLogger(Bluetooth.class);
+    private final Logger logger = LoggerFactory.getLogger(Bluetooth.class);
 
     private static final long READ_TIMEOUT_MILLIS = 15000;
 
@@ -76,7 +76,6 @@ public class Bluetooth {
     }
 
     public void open() throws IOException {
-
         close();
         if (connection == null) {
             logger.debug("Bluetooth({}).open()", System.identityHashCode(this));
@@ -89,7 +88,6 @@ public class Bluetooth {
     }
 
     public void close() {
-
         if (connection != null) {
             try {
                 logger.debug("Bluetooth({}).close()", System.identityHashCode(this));
@@ -108,7 +106,6 @@ public class Bluetooth {
     }
 
     public void sendSMAFrame(SMAFrame frame) throws IOException {
-
         ByteArrayOutputStream temp = new ByteArrayOutputStream();
         frame.write(temp);
         byte[] buffer = temp.toByteArray();
@@ -118,7 +115,6 @@ public class Bluetooth {
     }
 
     public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
-
         logger.trace("receiveSMAFrame(...,{})", wait4Command);
 
         int command = 0;
@@ -130,7 +126,6 @@ public class Bluetooth {
             logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
 
             if (destAddress.equals(f.getSourceAddress())) {
-
                 logger.trace("source: {}", f.getSourceAddress().toString());
                 logger.trace("destination: {}", f.getDestinationAddress().toString());
 
@@ -144,7 +139,6 @@ public class Bluetooth {
     }
 
     public PPPFrame receivePPPFrame(short pktId) throws IOException {
-
         logger.trace("receivePPPFrame({})", pktId);
 
         PPPFrame ppp = null;

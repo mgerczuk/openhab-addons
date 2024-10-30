@@ -18,16 +18,6 @@ import java.util.HashMap;
  * @author Martin Gerczuk - Initial contribution
  */
 public interface SmaDevice {
-
-    public static final short NaN_S16 = (short) 0x8000; // "Not a Number" representation for SHORT (converted to 0)
-    public static final short NaN_U16 = (short) 0xFFFF; // "Not a Number" representation for USHORT (converted to 0)
-    public static final int NaN_S32 = 0x80000000; // "Not a Number" representation for LONG (converted to 0)
-    public static final int NaN_U32 = 0xFFFFFFFF; // "Not a Number" representation for ULONG (converted to 0)
-    public static final long NaN_S64 = 0x8000000000000000L; // "Not a Number" representation for LONGLONG (converted to
-                                                            // 0)
-    public static final long NaN_U64 = 0xFFFFFFFFFFFFFFFFL; // "Not a Number" representation for ULONGLONG (converted to
-                                                            // 0)
-
     //@formatter:off
     public enum InverterQuery {
         None                (0         , 0         , 0), // undefined
@@ -180,7 +170,6 @@ public interface SmaDevice {
         MeteringSelfCsmpAbsSelfCsmpInc  (0x0046AD00), // *00* Rise in self-consumption
         MeteringSelfCsmpDySelfCsmpInc   (0x0046AE00), // *00* Rise in self-consumption today
         BatDiagCapacThrpCnt     (0x00491E00), // *40* Number of battery charge throughputs
-        //TODO Check battery data assoc
         BatDiagTotAhIn          (0x00492600, "BAT_CHARGE", InverterQuery.BatteryChargeStatus), // *00* Amp hours counter for battery charge
         BatDiagTotAhOut         (0x00492700, "BAT_DISCHARGE", InverterQuery.BatteryChargeStatus), // *00* Amp hours counter for battery discharge
         BatTmpVal               (0x00495B00, "BAT_TEMP", InverterQuery.BatteryInfo), // *40* Battery temperature
@@ -267,37 +256,6 @@ public interface SmaDevice {
             for (SmaDevice.LRIDefinition e : SmaDevice.LRIDefinition.values()) {
                 valueMap.put(e.getValue(), e);
                 codeMap.put(e.getCode(), e);
-            }
-        }
-    }
-
-    public enum SMA_DATATYPE {
-        DT_ULONG(0),
-        DT_STATUS(8),
-        DT_STRING(16),
-        DT_FLOAT(32),
-        DT_SLONG(64);
-
-        public final int value;
-
-        private static HashMap<Integer, SmaDevice.SMA_DATATYPE> valueMap;
-
-        SMA_DATATYPE(int value) {
-            this.value = value;
-        }
-
-        public static SMA_DATATYPE fromOrdinal(int i) {
-            if (valueMap == null) {
-                prepareMap();
-            }
-            return valueMap.get(i);
-        }
-
-        private static synchronized void prepareMap() {
-            valueMap = new HashMap<Integer, SmaDevice.SMA_DATATYPE>(SmaDevice.SMA_DATATYPE.values().length);
-
-            for (SmaDevice.SMA_DATATYPE e : SmaDevice.SMA_DATATYPE.values()) {
-                valueMap.put(e.value, e);
             }
         }
     }

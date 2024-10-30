@@ -17,16 +17,25 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice;
+import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class Value {
     private int mCls;
     private SmaDevice.LRIDefinition mLri;
-    private SmaDevice.SMA_DATATYPE mDataType;
+    private int mDataType;
     private Date mDatetime;
+
+    private static final int DT_ULONG = 0;
+    private static final int DT_STATUS = 8;
+    private static final int DT_STRING = 16;
+    private static final int DT_FLOAT = 32;
+    private static final int DT_SLONG = 64;
 
     public SmaDevice.LRIDefinition getLri() {
         return mLri;
@@ -52,24 +61,27 @@ public class Value {
         return ((SLong) this).getValue();
     }
 
-    protected Value() {
+    protected Value(int cls, LRIDefinition lri, int dataType, Date datetime) {
+        mCls = cls;
+        mLri = lri;
+        mDataType = dataType;
+        mDatetime = datetime;
     }
 
     protected Value(Value other) {
-        this.mCls = other.mCls;
+        mCls = other.mCls;
         mLri = other.mLri;
         mDataType = other.mDataType;
         mDatetime = other.mDatetime;
     }
 
-    public static Value Read(BinaryInputStream rd, int recordSize) throws IOException {
-        Value d = new Value();
-
+    public static Value read(BinaryInputStream rd, int recordSize) throws IOException {
         int code = (int) rd.readUInt(); // recptr
-        d.mLri = SmaDevice.LRIDefinition.fromOrdinal(code & 0x00FFFF00);
-        d.mCls = code & 0xFF;
-        d.mDataType = SmaDevice.SMA_DATATYPE.fromOrdinal(code >>> 24);
-        d.mDatetime = new Date(rd.readUInt() * 1000L); // recptr + 4
+        SmaDevice.LRIDefinition lri = SmaDevice.LRIDefinition.fromOrdinal(code & 0x00FFFF00);
+        int cls = code & 0xFF;
+        int dataType = code >>> 24;
+        Date datetime = new Date(rd.readUInt() * 1000L); // recptr + 4
+        Value d = new Value(cls, lri, dataType, datetime);
 
         switch (d.mDataType) {
             case DT_ULONG:
@@ -83,13 +95,13 @@ public class Value {
             case DT_SLONG:
                 return new SLong(d, rd, recordSize);
             default:
-                throw new IOException("unknown data type " + Integer.toString(d.mDataType.value));
+                throw new IOException("unknown data type " + Integer.toString(d.mDataType));
         }
     }
 
     public static class ULong extends Value {
 
-        static public final long NANVal = 0xFFFFFFFFFFFFFFFFL;
+        public static final long NAN = 0xFFFFFFFFFFFFFFFFL;
 
         long mValue;
 
@@ -107,7 +119,7 @@ public class Value {
                     rd.readULong();
                     mValue = rd.readUInt();
                     if (mValue == 0xFFFFFFFFL) {
-                        mValue = NANVal;
+                        mValue = NAN;
                     }
                     break;
                 case 40:
@@ -115,7 +127,7 @@ public class Value {
                     rd.readULong();
                     mValue = rd.readUInt();
                     if (mValue == 0xFFFFFFFFL) {
-                        mValue = NANVal;
+                        mValue = NAN;
                     }
                     break;
                 default:
@@ -164,7 +176,7 @@ public class Value {
 
     public static class SLong extends Value {
 
-        static public final long NANVal = 0x8000000000000000L;
+        public static final long NAN = 0x8000000000000000L;
 
         long mValue;
 
@@ -182,7 +194,7 @@ public class Value {
                     rd.readULong();
                     mValue = rd.readUInt();
                     if (mValue == 0x80000000) {
-                        mValue = NANVal;
+                        mValue = NAN;
                     }
                     break;
                 case 40:
@@ -190,7 +202,7 @@ public class Value {
                     rd.readULong();
                     mValue = rd.readUInt();
                     if (mValue == 0x80000000) {
-                        mValue = NANVal;
+                        mValue = NAN;
                     }
                     break;
                 default:

@@ -47,12 +47,15 @@ package org.openhab.binding.sma.internal.util;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.luckycatlabs.sunrisesunset.dto.Location;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SunriseSunset {
 
     private SunriseSunsetCalculator calculator;

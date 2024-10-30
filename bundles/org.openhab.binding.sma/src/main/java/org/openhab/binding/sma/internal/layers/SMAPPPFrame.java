@@ -15,17 +15,20 @@ package org.openhab.binding.sma.internal.layers;
 import java.io.IOException;
 import java.util.Random;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SMAPPPFrame {
 
     public static final byte CONTROL = 0x03;
     public static final short PROTOCOL = 0x6065;
 
     // Generate a Serial Number for application
-    public static final short AppSUSyID = 125;
-    public static int AppSerial = generateAppSerial();
+    public static final short APP_SUSY_ID = 125;
+    public static int appSerial = generateAppSerial();
 
     public static final short ANYSUSYID = (short) 0xFFFF;
     public static final int ANYSERIAL = 0xFFFFFFFF;
@@ -37,7 +40,6 @@ public class SMAPPPFrame {
 
     public static BinaryOutputStream writePppHeader(byte longwords, byte ctrl, short ctrl2, short dstSUSyID,
             int dstSerial, short pcktID) throws IOException {
-
         BinaryOutputStream b = new BinaryOutputStream();
 
         b.writeByte(longwords);
@@ -45,8 +47,8 @@ public class SMAPPPFrame {
         b.writeShort(dstSUSyID);
         b.writeInt(dstSerial);
         b.writeShort(ctrl2);
-        b.writeShort(AppSUSyID);
-        b.writeInt(AppSerial);
+        b.writeShort(APP_SUSY_ID);
+        b.writeInt(appSerial);
         b.writeShort(ctrl2);
         b.writeShort(0);
         b.writeShort(0);

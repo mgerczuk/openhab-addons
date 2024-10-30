@@ -15,6 +15,8 @@ package org.openhab.binding.sma.internal.layers;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * Stream for writing little-endian encoded binary data to a byte buffer.
  *
@@ -22,6 +24,7 @@ import java.io.IOException;
  *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class BinaryOutputStream {
 
     private final ByteArrayOutputStream os;

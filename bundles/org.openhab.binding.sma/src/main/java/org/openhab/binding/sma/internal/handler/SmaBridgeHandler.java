@@ -81,13 +81,11 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-
         logger.info("SmaBridgeHandler.handleCommand({},{})", channelUID.toString(), command.toString());
     }
 
     @Override
     public void initialize() {
-
         logger.info("SmaBridgeHandler.initialize()");
 
         SmaDiscoveryService discovery = new SmaDiscoveryService(this);
@@ -190,9 +188,7 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
                 updateSums(inverters);
             }
             updateStatus(ThingStatus.ONLINE);
-
         } catch (IOException e) {
-
             if (srs.logErrors()) {
                 logger.error("run() failed: {}", e.getMessage());
             } else {
@@ -200,11 +196,9 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
             }
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } catch (Exception e) {
-
             logger.error("run() unexpected exception", e);
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         } finally {
-
             plant.exit();
             logger.debug("run() finished.");
         }
@@ -270,7 +264,6 @@ public class SmaBridgeHandler extends BaseBridgeHandler implements Runnable {
     }
 
     private void getData(SmaBridgeConfiguration config, BluetoothSolarInverterPlant inverter) throws IOException {
-
         inverter.init(new Bluetooth(new SmaBluetoothAddress(config.btAddress, 1)));
         inverter.logon(SmaUserGroup.User, config.userPassword);
         inverter.setInverterTime();

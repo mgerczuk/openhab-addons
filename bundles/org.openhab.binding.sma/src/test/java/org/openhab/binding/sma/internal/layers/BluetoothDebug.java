@@ -82,7 +82,6 @@ public class BluetoothDebug extends Bluetooth {
     }
 
     public void setDebugData(ReadCall[] calls, WriteCall[] writes) {
-
         for (ReadCall c : calls) {
             connectionDebug.addReadData(c.data);
         }

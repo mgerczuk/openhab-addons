@@ -14,6 +14,8 @@ package org.openhab.binding.sma.internal.layers;
 
 import java.io.IOException;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * Stream for reading little-endian encoded binary data from a byte buffer.
  *
@@ -21,6 +23,7 @@ import java.io.IOException;
  *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class BinaryInputStream {
 
     private final byte[] buf;

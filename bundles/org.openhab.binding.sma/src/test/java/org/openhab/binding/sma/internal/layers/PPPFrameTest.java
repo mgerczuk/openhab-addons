@@ -19,11 +19,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 class PPPFrameTest {
 
     @Test

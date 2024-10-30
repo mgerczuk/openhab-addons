@@ -17,16 +17,17 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class BluetoothTest {
 
     @Test
     void testReceive1() {
-
         BluetoothDebug bt = new BluetoothDebug();
 
         bt.addReadData("7E 6A 00 14 06 B6 15 25 80 00", //
@@ -60,7 +61,6 @@ public class BluetoothTest {
 
     @Test
     void testReceive2() {
-
         BluetoothDebug.ReadCall[] read = new BluetoothDebug.ReadCall[] {
                 new BluetoothDebug.ReadCall(18,
                         new byte[] { 0x7E, 0x6D, 0x00, 0x13, 0x06, (byte) 0xB6, 0x15, 0x25, (byte) 0x80, 0x00, 0x79,

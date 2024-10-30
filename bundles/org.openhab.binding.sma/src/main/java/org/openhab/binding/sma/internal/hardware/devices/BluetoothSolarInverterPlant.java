@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BluetoothSolarInverterPlant {
 
-    private static final Logger logger = LoggerFactory.getLogger(BluetoothSolarInverterPlant.class);
+    private final Logger logger = LoggerFactory.getLogger(BluetoothSolarInverterPlant.class);
 
     private final int connectRetries = 10;
     private boolean isInit = false;
@@ -60,20 +60,11 @@ public class BluetoothSolarInverterPlant {
 
     private short pcktID = 1;
 
-    private static final String strkW = "{}: {} (kW)   {}";
-    private static final String strVolt = "{}: {} (V)   {}";
-    private static final String strAmp = "{}: {} (A)   {}";
-    private static final String strkWh = "{}: {} (kWh) {}";
-    private static final String strHour = "{}: {} (h)   {}";
-
-    // protected String address;
-
     public BluetoothSolarInverterPlant() {
         super();
     }
 
     public void init(Bluetooth layer) throws IOException {
-
         if (this.layer != null && this.layer.isOpen()) {
             logger.error("Bluetooth already open! Resource leak!");
         }
@@ -156,7 +147,6 @@ public class BluetoothSolarInverterPlant {
                     Data inverter = new BluetoothSolarInverterPlant.Data(address);
                     inverter.setNetID(netID);
                     inverters.add(inverter);
-
                 } else {
                     // other device
                     logger.debug("Device {}: other device @ {}", devcount, address);
@@ -242,7 +232,6 @@ public class BluetoothSolarInverterPlant {
 
                     for (int ptr = 0; ptr < pcktsize; ptr += 8) {
                         if (logger.isDebugEnabled()) {
-
                             SmaBluetoothAddress dest = new SmaBluetoothAddress(data, ptr);
                             logger.debug("Device {}: {} -> ", devcount, dest);
                         }
@@ -258,9 +247,6 @@ public class BluetoothSolarInverterPlant {
                             inverters.add(inverter);
 
                             devcount++;
-
-                        } else {
-                            // other device
                         }
                     }
                 }
@@ -276,7 +262,6 @@ public class BluetoothSolarInverterPlant {
                     data = frame.getFrame();
                     packetType = frame.getControl();
                 }
-
             }
 
             // prepare some caching
@@ -327,8 +312,6 @@ public class BluetoothSolarInverterPlant {
         } catch (IOException e) {
             layer.close();
             throw new IOException("can't initialize inverter plant: " + e.getMessage());
-        } finally {
-            // layer.close();
         }
     }
 
@@ -447,7 +430,7 @@ public class BluetoothSolarInverterPlant {
         return inverters;
     }
 
-    public final static void readBTAddress(byte[] src, byte[] dest, int start) {
+    public static final void readBTAddress(byte[] src, byte[] dest, int start) {
         dest[0] = src[start + 5];
         dest[1] = src[start + 4];
         dest[2] = src[start + 3];
@@ -466,7 +449,6 @@ public class BluetoothSolarInverterPlant {
         boolean validPcktID = false;
 
         try {
-
             layer.sendSMAFrame(new SMAFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
                     SMAPPPFrame
                             .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, SMAPPPFrame.ANYSUSYID,
@@ -500,11 +482,13 @@ public class BluetoothSolarInverterPlant {
 
                     final int recordsize = 4 * (a - 9) / (int) (b - c + 1);
 
+                    List<Integer> tags = null;
+
                     for (int i = 36; i < data.length; i += recordsize) {
 
                         rd.seek(i);
 
-                        Value val = Value.Read(rd, recordsize);
+                        Value val = Value.read(rd, recordsize);
 
                         if (val.getLri() == LRIDefinition.MeteringDyWhOut) {
                             // This function gives us the current
@@ -514,32 +498,26 @@ public class BluetoothSolarInverterPlant {
 
                         switch (val.getLri()) {
                             case GridMsTotW: // SPOT_PACTOT
-
                                 // This function gives us the time when
                                 // the inverter was switched off
                                 current.setSleepTime(val.getDatetime());
-                                current.setValue(val.getLri(), new QuantityType<>(val.getSLongValue(), Units.WATT));
-                                logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getSLongValue()),
+                                current.setValue(val.getLri(), new QuantityType<>(val.getSLongValue(), Units.WATT),
                                         val.getDatetime());
                                 break;
 
                             case OperationHealthSttOk: // INV_PACMAX1
                             case OperationHealthSttWrn: // INV_PACMAX2
                             case OperationHealthSttAlm: // INV_PACMAX3
-
-                                current.setValue(val.getLri(), new QuantityType<>(val.getULongValue(), Units.WATT));
-                                logger.debug(strkW, val.getLri().getCode(), Utils.tokW(val.getULongValue()),
+                                current.setValue(val.getLri(), new QuantityType<>(val.getULongValue(), Units.WATT),
                                         val.getDatetime());
                                 break;
 
                             case GridMsPhVphsA: // SPOT_UAC1
                             case GridMsPhVphsB: // SPOT_UAC2
                             case GridMsPhVphsC: // SPOT_UAC3
-
-                                if (val.getULongValue() != Value.ULong.NANVal) {
+                                if (val.getULongValue() != Value.ULong.NAN) {
                                     current.setValue(val.getLri(),
-                                            new QuantityType<>(val.getULongValue() / 100.0, Units.VOLT));
-                                    logger.debug(strVolt, val.getLri().getCode(), Utils.toVolt(val.getULongValue()),
+                                            new QuantityType<>(val.getULongValue() / 100.0, Units.VOLT),
                                             val.getDatetime());
                                 }
                                 break;
@@ -547,26 +525,20 @@ public class BluetoothSolarInverterPlant {
                             case GridMsAphsA_1: // SPOT_IAC1
                             case GridMsAphsB_1: // SPOT_IAC2
                             case GridMsAphsC_1: // SPOT_IAC3
-
-                                if (val.getULongValue() != Value.ULong.NANVal) {
+                                if (val.getULongValue() != Value.ULong.NAN) {
                                     current.setValue(val.getLri(),
-                                            new QuantityType<>(val.getULongValue() / 1000.0, Units.AMPERE));
-                                    logger.debug(strAmp, val.getLri().getCode(), Utils.toAmp(val.getULongValue()),
+                                            new QuantityType<>(val.getULongValue() / 1000.0, Units.AMPERE),
                                             val.getDatetime());
                                 }
                                 break;
 
                             case MeteringTotWhOut: // SPOT_ETOTAL
                             case MeteringDyWhOut: // SPOT_ETODAY
-
-                                current.setValue(val.getLri(),
-                                        new QuantityType<>(val.getULongValue(), Units.WATT_HOUR));
-                                logger.debug(strkWh, current + val.getLri().getCode(), Utils.tokWh(val.getULongValue()),
+                                current.setValue(val.getLri(), new QuantityType<>(val.getULongValue(), Units.WATT_HOUR),
                                         val.getDatetime());
                                 break;
 
                             case NameplateLocation: // INV_NAME
-
                                 // This function gives us the time when the inverter was switched on
                                 current.setWakeupTime(val.getDatetime());
                                 current.setDeviceName(val.getStringValue());
@@ -574,55 +546,47 @@ public class BluetoothSolarInverterPlant {
                                 break;
 
                             case NameplatePkgRev: // INV_SWVER
-
                                 current.setSwVersion(Utils.toVersionString(val.getULongValue()));
                                 logger.debug("INV_SWVER: '{}' {}", current.getSwVersion(), val.getDatetime());
                                 break;
 
                             case NameplateModel: // INV_TYPE
-                            {
-                                List<Integer> tags = val.getStatusTags();
+                                tags = val.getStatusTags();
 
-                                if (tags.size() > 0) {
+                                if (!tags.isEmpty()) {
                                     current.setDeviceType(SmaDevice.getModel(tags.get(0)));
-                                    current.setValue(val.getLri(), current.getDeviceType());
+                                    current.setValue(val.getLri(), new StringType(current.getDeviceType()),
+                                            val.getDatetime());
                                     logger.debug("INV_TYPE: '{}' {}", current.getDeviceType(), val.getDatetime());
                                 }
-                            }
                                 break;
 
                             case NameplateMainModel: // INV_CLASS:
-                            {
-                                List<Integer> tags = val.getStatusTags();
+                                tags = val.getStatusTags();
 
-                                if (tags.size() > 0) {
+                                if (!tags.isEmpty()) {
                                     current.setDevClass(SmaDevice.DeviceClass.fromOrdinal(tags.get(0)));
-                                    current.setValue(val.getLri(), current.getDevClass().name());
-                                    logger.debug("INV_CLASS: {} {}", current.getDeviceStatus(), val.getDatetime());
+                                    current.setValue(val.getLri(), new StringType(current.getDevClass().name()),
+                                            val.getDatetime());
                                 }
-                            }
                                 break;
 
                             case OperationHealth: // INV_STATUS:
-                            {
-                                List<Integer> tags = val.getStatusTags();
+                                tags = val.getStatusTags();
 
-                                if (tags.size() > 0) {
+                                if (!tags.isEmpty()) {
                                     current.setDeviceStatus(tags.get(0));
-                                    current.setValue(val.getLri(), new DecimalType(current.getDeviceStatus()));
-                                    logger.debug("INV_STATUS: {} {}", current.getDeviceStatus(), val.getDatetime());
+                                    current.setValue(val.getLri(), new DecimalType(current.getDeviceStatus()),
+                                            val.getDatetime());
                                 }
-                            }
                                 break;
 
                             default:
                                 logger.warn("Unhandled LRI {}", val.getLri().getCode());
                         }
                     }
-
                 } while (!validPcktID);
             }
-
         } catch (IOException e) {
             logger.debug("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
@@ -635,7 +599,7 @@ public class BluetoothSolarInverterPlant {
         return "BluetoothSolarInverterPlant [rootAddress=" + rootDeviceAdress + "]";
     }
 
-    public static class Data {
+    public class Data {
 
         private SmaBluetoothAddress address;
         private String deviceName;
@@ -753,12 +717,9 @@ public class BluetoothSolarInverterPlant {
             return values.get(lri);
         }
 
-        public void setValue(LRIDefinition lri, State value) {
+        public void setValue(LRIDefinition lri, State value, Date date) {
+            logger.debug("{}({}): {}   {}", lri.getCode(), serial.suSyID, value.toString(), date);
             values.put(lri, value);
-        }
-
-        public void setValue(LRIDefinition lri, String value) {
-            values.put(lri, new StringType(value));
         }
 
         @Override

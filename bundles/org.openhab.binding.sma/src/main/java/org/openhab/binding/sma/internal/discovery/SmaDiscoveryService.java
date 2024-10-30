@@ -17,6 +17,7 @@ import static org.openhab.binding.sma.internal.SmaBindingConstants.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.sma.internal.SmaHandlerFactory;
 import org.openhab.binding.sma.internal.handler.SmaBridgeHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SmaDiscoveryService extends AbstractDiscoveryService {
 
     private final Logger logger = LoggerFactory.getLogger(SmaDiscoveryService.class);

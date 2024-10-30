@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +28,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class PPPFrame {
 
-    private static final Logger logger = LoggerFactory.getLogger(PPPFrame.class);
+    private final Logger logger = LoggerFactory.getLogger(PPPFrame.class);
 
     public static final byte HDLC_ADR_BROADCAST = (byte) 0xff;
 
@@ -42,7 +44,7 @@ public class PPPFrame {
 
     byte[] payload;
 
-    private SmaBluetoothAddress frameSourceAddress;
+    private SmaBluetoothAddress frameSourceAddress = new SmaBluetoothAddress();
 
     public PPPFrame(byte address, byte control, short protocol, byte[] payload) {
         this.address = address;
@@ -107,7 +109,6 @@ public class PPPFrame {
     }
 
     public static PPPFrame read(InputStream is) throws IOException {
-
         byte[] header = new byte[5];
         if (is.read(header) < header.length) {
             throw new IOException("EOF");
@@ -137,14 +138,14 @@ public class PPPFrame {
 
         byte[] buffer = payloadStream.toByteArray();
         byte[] payload = Arrays.copyOf(buffer, buffer.length - 2);
-        short fcs_read = (short) le2short(buffer, buffer.length - 2);
+        short fcsRead = (short) le2short(buffer, buffer.length - 2);
 
         for (int i = 0; i < payload.length; i++) {
             crc.writeByte(payload[i]);
         }
 
-        short fcs_calc = crc.get();
-        if (fcs_read != fcs_calc) {
+        short fcsCalc = crc.get();
+        if (fcsRead != fcsCalc) {
             throw new IOException("FCS mismatch");
         }
 
@@ -154,7 +155,6 @@ public class PPPFrame {
     }
 
     public void write(OutputStream os) throws IOException {
-
         os.write(HDLC_SYNC);
         byte[] unescaped = getFrame();
         EscapeOutputStream esc = new EscapeOutputStream(os);

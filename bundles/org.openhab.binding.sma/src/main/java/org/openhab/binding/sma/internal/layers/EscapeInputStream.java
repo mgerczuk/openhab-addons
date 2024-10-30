@@ -16,11 +16,14 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * Stream reading HDLC data
- * 
+ *
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class EscapeInputStream extends FilterInputStream {
 
     private boolean isEof = false;
@@ -31,7 +34,6 @@ public class EscapeInputStream extends FilterInputStream {
 
     @Override
     public int read() throws IOException {
-
         if (isEof) {
             return -1;
         }

@@ -23,7 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class CRC {
 
     //@formatter:off
-    private static final int fcstab[] = new int[] {
+    private static final int FCS_TAB[] = new int[] {
             0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
             0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e, 0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed, 0xcb64, 0xf9ff, 0xe876,
             0x2102, 0x308b, 0x0210, 0x1399, 0x6726, 0x76af, 0x4434, 0x55bd, 0xad4a, 0xbcc3, 0x8e58, 0x9fd1, 0xeb6e, 0xfae7, 0xc87c, 0xd9f5,
@@ -43,14 +43,14 @@ public class CRC {
     };
     //@formatter:on
 
-    private short FCSChecksum = (short) 0xffff;
+    private short fcsChecksum = (short) 0xffff;
 
     public void reset() {
-        FCSChecksum = (short) 0xFFFF;
+        fcsChecksum = (short) 0xFFFF;
     }
 
     public void writeByte(byte v) {
-        FCSChecksum = (short) (((FCSChecksum & 0xff00) >>> 8) ^ fcstab[(FCSChecksum ^ v) & 0xff]);
+        fcsChecksum = (short) (((fcsChecksum & 0xff00) >>> 8) ^ FCS_TAB[(fcsChecksum ^ v) & 0xff]);
     }
 
     public void write(byte[] buf, int offset, int len) {
@@ -60,6 +60,6 @@ public class CRC {
     }
 
     public short get() {
-        return (short) (FCSChecksum ^ 0xFFFF);
+        return (short) (fcsChecksum ^ 0xFFFF);
     }
 }

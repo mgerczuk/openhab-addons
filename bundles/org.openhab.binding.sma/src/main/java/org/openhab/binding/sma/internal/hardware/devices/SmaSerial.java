@@ -12,9 +12,13 @@
  */
 package org.openhab.binding.sma.internal.hardware.devices;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SmaSerial {
     public short suSyID;
     public long serial;
@@ -39,7 +43,7 @@ public class SmaSerial {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) {
             return true;
         }
@@ -53,9 +57,6 @@ public class SmaSerial {
         if (serial != other.serial) {
             return false;
         }
-        if (suSyID != other.suSyID) {
-            return false;
-        }
-        return true;
+        return (suSyID == other.suSyID);
     }
 }

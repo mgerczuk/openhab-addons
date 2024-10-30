@@ -24,15 +24,17 @@ import java.io.OutputStream;
 
 import javax.microedition.io.StreamConnection;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class StreamConnectionDebug implements StreamConnection {
 
-    private static final Logger logger = LoggerFactory.getLogger(StreamConnectionDebug.class);
+    private final Logger logger = LoggerFactory.getLogger(StreamConnectionDebug.class);
 
     ByteArrayOutputStream osRead = new ByteArrayOutputStream();
     ByteArrayOutputStream osWrite = new ByteArrayOutputStream();

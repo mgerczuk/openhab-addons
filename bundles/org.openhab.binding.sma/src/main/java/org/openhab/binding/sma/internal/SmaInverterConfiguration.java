@@ -12,9 +12,12 @@
  */
 package org.openhab.binding.sma.internal;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
+
 /**
  * @author Martin Gerczuk - Initial contribution
  */
+@NonNullByDefault
 public class SmaInverterConfiguration {
     public int susyid;
 }

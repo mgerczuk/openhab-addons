@@ -113,7 +113,7 @@ public class BluetoothSolarInverterPlantTest {
                 "7E 12 00 6C 06 B6 15 25 80 00", //
                 "00 00 00 00 00 00 06 00");
 
-        SMAPPPFrame.AppSerial = 0x3675605D;
+        SMAPPPFrame.appSerial = 0x3675605D;
 
         // Send broadcast request for identification
         bt.addWriteData( //
@@ -159,7 +159,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testGetData0() {
         BluetoothDebug bt = new BluetoothDebug();
-        SMAPPPFrame.AppSerial = 0x38C6DB35;
+        SMAPPPFrame.appSerial = 0x38C6DB35;
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
@@ -716,7 +716,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testGetData() {
         BluetoothDebug bt = new BluetoothDebug();
-        SMAPPPFrame.AppSerial = 934043669;
+        SMAPPPFrame.appSerial = 934043669;
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
