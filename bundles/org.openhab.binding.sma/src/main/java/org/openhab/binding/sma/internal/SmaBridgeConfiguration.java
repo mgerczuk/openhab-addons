@@ -10,22 +10,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.publictransportswitzerland.internal.stationboard;
+package org.openhab.binding.sma.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * The {@link PublicTransportSwitzerlandStationboardConfiguration} class contains fields mapping thing configuration
- * parameters.
+ * The {@link SmaBridgeConfiguration} class contains fields mapping thing configuration parameters.
  *
- * @author Jeremy Stucki - Initial contribution
+ * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault
-public class PublicTransportSwitzerlandStationboardConfiguration {
+public class SmaBridgeConfiguration {
 
-    /**
-     * The station name
-     */
-    public @Nullable String station;
+    public String btAddress = "";
+    public String userPassword = "";
+    public int cycle = 120;
+    public double longitude = 7;
+    public double latitude = 14;
 }

@@ -10,24 +10,26 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.publictransportswitzerland.internal;
+package org.openhab.binding.sma.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
- * The {@link PublicTransportSwitzerlandBindingConstants} class defines common constants, which are
+ * The {@link SmaBindingConstants} class defines common constants, which are
  * used across the whole binding.
  *
- * @author Jeremy Stucki - Initial contribution
+ * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault
-public class PublicTransportSwitzerlandBindingConstants {
+public class SmaBindingConstants {
 
-    private static final String BINDING_ID = "publictransportswitzerland";
+    private static final String BINDING_ID = "sma";
 
     // List of all Thing Type UIDs
-    public static final ThingTypeUID THING_TYPE_STATIONBOARD = new ThingTypeUID(BINDING_ID, "stationboard");
+    public static final ThingTypeUID THING_TYPE_BRIDGE = new ThingTypeUID(BINDING_ID, "bridge");
+    public static final ThingTypeUID THING_TYPE_INVERTER = new ThingTypeUID(BINDING_ID, "inverter");
 
-    public static final String BASE_URL = "https://transport.opendata.ch/v1/";
+    // List of all Parameter ids
+    public static final String PARAMETER_SUSYID = "susyid";
 }
