@@ -34,8 +34,12 @@ public class BinaryInputStream {
         pos = 0;
     }
 
+    public int tell() {
+        return pos;
+    }
+
     public void seek(int newPos) throws IOException {
-        if (newPos < 0 || newPos >= buf.length) {
+        if (newPos < 0 || newPos > buf.length) {
             throw new IOException("invalid seek");
         }
 

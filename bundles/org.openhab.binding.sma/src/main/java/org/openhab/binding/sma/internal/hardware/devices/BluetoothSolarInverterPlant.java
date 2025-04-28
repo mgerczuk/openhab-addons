@@ -28,6 +28,7 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BinaryInputStream;
 import org.openhab.binding.sma.internal.layers.BinaryOutputStream;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
+import org.openhab.binding.sma.internal.layers.DataHeader;
 import org.openhab.binding.sma.internal.layers.PPPFrame;
 import org.openhab.binding.sma.internal.layers.SMAFrame;
 import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
@@ -465,7 +466,15 @@ public class BluetoothSolarInverterPlant {
                     byte[] data = frame.getPayload();
                     BinaryInputStream rd = new BinaryInputStream(data);
 
-                    SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 10), Utils.getInt(data, 12));
+                    DataHeader hdr = new DataHeader();
+                    hdr.read(rd);
+
+                    if (hdr.getStatus() != 0) {
+                        logger.error("Header status is {} != 0", hdr.getStatus());
+                        return false;
+                    }
+
+                    SmaSerial serial = new SmaSerial(hdr.getSuSyID(), hdr.getSerial());
                     BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
                     if (current == null) {
@@ -473,20 +482,20 @@ public class BluetoothSolarInverterPlant {
                     }
 
                     validPcktID = true;
+                    if (pcktID != hdr.getPcktID()) {
+                        logger.error("expected pcktID {} - received {}", pcktID, hdr.getPcktID());
+                        return false;
+                    }
 
-                    rd.seek(0);
-                    int a = rd.readByte();
-                    rd.seek(28);
-                    long c = rd.readUInt();
-                    long b = rd.readUInt();
-
-                    final int recordsize = 4 * (a - 9) / (int) (b - c + 1);
+                    final int recordsize = hdr.getRecordSize();
 
                     List<Integer> tags = null;
 
                     for (int i = 36; i < data.length; i += recordsize) {
 
-                        rd.seek(i);
+                        if (i != rd.tell()) {
+                            logger.error("unexpected stream position");
+                        }
 
                         Value val = Value.read(rd, recordsize);
 

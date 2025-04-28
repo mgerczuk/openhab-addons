@@ -76,6 +76,8 @@ public class Value {
     }
 
     public static Value read(BinaryInputStream rd, int recordSize) throws IOException {
+        int startPos = rd.tell();
+
         int code = (int) rd.readUInt(); // recptr
         SmaDevice.LRIDefinition lri = SmaDevice.LRIDefinition.fromOrdinal(code & 0x00FFFF00);
         int cls = code & 0xFF;
@@ -85,18 +87,25 @@ public class Value {
 
         switch (d.mDataType) {
             case DT_ULONG:
-                return new ULong(d, rd, recordSize);
+                d = new ULong(d, rd, recordSize);
+                break;
             case DT_STATUS:
-                return new Status(d, rd, recordSize);
+                d = new Status(d, rd, recordSize);
+                break;
             case DT_STRING:
-                return new String(d, rd, recordSize);
+                d = new String(d, rd, recordSize);
+                break;
             case DT_FLOAT:
                 throw new IOException("DT_FLOAT not supported");
             case DT_SLONG:
-                return new SLong(d, rd, recordSize);
+                d = new SLong(d, rd, recordSize);
+                break;
             default:
                 throw new IOException("unknown data type " + Integer.toString(d.mDataType));
         }
+
+        rd.seek(startPos + recordSize);
+        return d;
     }
 
     public static class ULong extends Value {
