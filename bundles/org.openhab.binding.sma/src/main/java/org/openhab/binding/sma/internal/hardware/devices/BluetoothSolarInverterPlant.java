@@ -273,13 +273,14 @@ public class BluetoothSolarInverterPlant {
 
             // Send broadcast request for identification
             layer.sendOuterFrame(new OuterFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                    InnerFrame
-                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, InnerFrame.ANYSUSYID,
-                                    InnerFrame.ANYSERIAL, ++pcktID) //
-                            .writeInt(0x00000200)//
-                            .writeInt(0x0)//
-                            .writeInt(0x0)//
-                            .toPPPFrame()));
+                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            InnerFrame
+                                    .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0x0, InnerFrame.ANYSUSYID,
+                                            InnerFrame.ANYSERIAL, ++pcktID) //
+                                    .writeInt(0x00000200)//
+                                    .writeInt(0x0)//
+                                    .writeInt(0x0)//
+                                    .toByteArray())));
 
             // All inverters *should* reply with their SUSyID & SerialNr
             // (and some other unknown info)
@@ -341,16 +342,17 @@ public class BluetoothSolarInverterPlant {
             now = layer.currentTimeSeconds();
 
             layer.sendOuterFrame(new OuterFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                    InnerFrame
-                            .writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, InnerFrame.ANYSUSYID,
-                                    InnerFrame.ANYSERIAL, ++pcktID)//
-                            .writeInt(0xFFFD040C)//
-                            .writeInt(userGroup.getValue()) // User / Installer
-                            .writeInt(0x00000384) // Timeout = 900sec ?
-                            .writeInt(now)//
-                            .writeInt(0x0)//
-                            .writeBytes(pw)//
-                            .toPPPFrame()));
+                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            InnerFrame
+                                    .writePppHeader((byte) 0x0E, (byte) 0xA0, (short) 0x0100, InnerFrame.ANYSUSYID,
+                                            InnerFrame.ANYSERIAL, ++pcktID)//
+                                    .writeInt(0xFFFD040C)//
+                                    .writeInt(userGroup.getValue()) // User / Installer
+                                    .writeInt(0x00000384) // Timeout = 900sec ?
+                                    .writeInt(now)//
+                                    .writeInt(0x0)//
+                                    .writeBytes(pw)//
+                                    .toByteArray())));
 
             do {
                 // All inverters *should* reply with their SUSyID & SerialNr
@@ -382,12 +384,13 @@ public class BluetoothSolarInverterPlant {
         logger.debug("logoff SMA Inverter");
         try {
             layer.sendOuterFrame(new OuterFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                    InnerFrame
-                            .writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, InnerFrame.ANYSUSYID,
-                                    InnerFrame.ANYSERIAL, ++pcktID) //
-                            .writeInt(0xFFFD010E)//
-                            .writeInt(0xFFFFFFFF)//
-                            .toPPPFrame()));
+                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            InnerFrame
+                                    .writePppHeader((byte) 0x08, (byte) 0xA0, (short) 0x0300, InnerFrame.ANYSUSYID,
+                                            InnerFrame.ANYSERIAL, ++pcktID) //
+                                    .writeInt(0xFFFD010E)//
+                                    .writeInt(0xFFFFFFFF)//
+                                    .toByteArray())));
         } catch (IOException e) {
             throw new IOException("logoff failed: " + e.getMessage());
         }
@@ -405,20 +408,21 @@ public class BluetoothSolarInverterPlant {
 
             pcktID++;
             layer.sendOuterFrame(new OuterFrame(0x01, layer.getLocalAddress(), rootDeviceAdress, //
-                    InnerFrame
-                            .writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, InnerFrame.ANYSUSYID,
-                                    InnerFrame.ANYSERIAL, pcktID)//
-                            .writeInt(0xF000020A)//
-                            .writeInt(0x00236D00)//
-                            .writeInt(0x00236D00)//
-                            .writeInt(0x00236D00)//
-                            .writeInt(localtime)//
-                            .writeInt(localtime)//
-                            .writeInt(localtime)//
-                            .writeInt(tzOffset)//
-                            .writeInt(1)//
-                            .writeInt(1)//
-                            .toPPPFrame()));
+                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            InnerFrame
+                                    .writePppHeader((byte) 0x10, (byte) 0xA0, (short) 0, InnerFrame.ANYSUSYID,
+                                            InnerFrame.ANYSERIAL, pcktID)//
+                                    .writeInt(0xF000020A)//
+                                    .writeInt(0x00236D00)//
+                                    .writeInt(0x00236D00)//
+                                    .writeInt(0x00236D00)//
+                                    .writeInt(localtime)//
+                                    .writeInt(localtime)//
+                                    .writeInt(localtime)//
+                                    .writeInt(tzOffset)//
+                                    .writeInt(1)//
+                                    .writeInt(1)//
+                                    .toByteArray())));
         } catch (IOException e) {
             throw new IOException("setInverterTime failed: " + e.getMessage());
         }
@@ -448,13 +452,14 @@ public class BluetoothSolarInverterPlant {
 
         try {
             layer.sendOuterFrame(new OuterFrame(0x01, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                    InnerFrame
-                            .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, InnerFrame.ANYSUSYID,
-                                    InnerFrame.ANYSERIAL, ++pcktID)//
-                            .writeInt(type.getCommand())//
-                            .writeInt(type.getFirst())//
-                            .writeInt(type.getLast())//
-                            .toPPPFrame()));
+                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            InnerFrame
+                                    .writePppHeader((byte) 0x09, (byte) 0xA0, (short) 0, InnerFrame.ANYSUSYID,
+                                            InnerFrame.ANYSERIAL, ++pcktID)//
+                                    .writeInt(type.getCommand())//
+                                    .writeInt(type.getFirst())//
+                                    .writeInt(type.getLast())//
+                                    .toByteArray())));
 
             for (int j = 0; j < inverters.size(); j++) {
                 validPcktID = false;
