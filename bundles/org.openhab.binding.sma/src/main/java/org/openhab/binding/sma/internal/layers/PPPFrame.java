@@ -38,11 +38,11 @@ public class PPPFrame {
     static final byte HDLC_ESC = 0x7d;
     static final byte HDLC_SYNC = 0x7e;
 
-    private byte address;
-    private byte control;
-    private short protocol;
+    private final byte address;
+    private final byte control;
+    private final short protocol;
 
-    byte[] payload;
+    private final byte[] payload;
 
     private SmaBluetoothAddress frameSourceAddress = new SmaBluetoothAddress();
 

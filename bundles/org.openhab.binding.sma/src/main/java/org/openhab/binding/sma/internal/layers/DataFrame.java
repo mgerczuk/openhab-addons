@@ -14,6 +14,9 @@ package org.openhab.binding.sma.internal.layers;
 
 import java.io.IOException;
 
+/**
+ * @author Martin Gerczuk - Initial contribution
+ */
 public class DataFrame extends InnerFrame {
     private long n1;
     private long n2;
@@ -35,5 +38,4 @@ public class DataFrame extends InnerFrame {
     public int getRecordSize() {
         return 4 * (getLengthDWords() - 9) / (int) (n2 - n1 + 1);
     }
-
 }

@@ -39,7 +39,7 @@ public class InnerFrame {
         return 900000000 + randomGenerator.nextInt(100000000);
     }
 
-    protected final Logger logger = LoggerFactory.getLogger(DataFrame.class);
+    protected final Logger logger = LoggerFactory.getLogger(InnerFrame.class);
 
     private int lengthDWords;
     private int ctrl;

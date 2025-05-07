@@ -106,9 +106,7 @@ public class Bluetooth {
     }
 
     public void sendOuterFrame(OuterFrame frame) throws IOException {
-        ByteArrayOutputStream temp = new ByteArrayOutputStream();
-        frame.write(temp);
-        out.write(temp.toByteArray());
+        frame.write(out);
     }
 
     public OuterFrame receiveOuterFrame(int wait4Command) throws IOException {
@@ -163,8 +161,8 @@ public class Bluetooth {
                 ppp.setFrameSourceAddress(lastSourceAddress);
             }
 
-            rcvpcktID = (ppp == null || ppp.payload.length < 24) ? -1
-                    : (short) (Utils.getShort(ppp.payload, 22) & 0x7FFF);
+            rcvpcktID = (ppp == null || ppp.getPayload().length < 24) ? -1
+                    : (short) (Utils.getShort(ppp.getPayload(), 22) & 0x7FFF);
 
             if (ppp != null) {
                 logger.trace("rcvpcktID id {}", rcvpcktID);
