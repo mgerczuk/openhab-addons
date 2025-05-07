@@ -485,8 +485,8 @@ public class BluetoothSolarInverterPlant {
 
                     validPcktID = true;
                     if (pcktID != hdr.getPcktID()) {
-                        logger.error("expected pcktID {} - received {}", pcktID, hdr.getPcktID());
-                        return false;
+                        logger.warn("expected pcktID {} - received {}", pcktID, hdr.getPcktID());
+                        // this was ignored for a long time, so no abort until we know it won't happen...
                     }
 
                     final int recordsize = hdr.getRecordSize();
