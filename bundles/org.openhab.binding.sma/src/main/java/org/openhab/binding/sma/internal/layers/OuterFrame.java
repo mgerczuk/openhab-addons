@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
  * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault
-public class SMAFrame {
+public class OuterFrame {
 
-    private final Logger logger = LoggerFactory.getLogger(SMAFrame.class);
+    private final Logger logger = LoggerFactory.getLogger(OuterFrame.class);
 
     // length of package header
     private static final int HEADERLENGTH = 18;
@@ -38,14 +38,14 @@ public class SMAFrame {
     private final SmaBluetoothAddress destinationAddress;
     private final byte[] payload;
 
-    public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
+    public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
         this.control = control;
         this.sourceAddress = localaddress;
         this.destinationAddress = destaddress;
         this.payload = payload;
     }
 
-    public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, PPPFrame frame)
+    public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, PPPFrame frame)
             throws IOException {
         this.control = control;
         this.sourceAddress = localaddress;
@@ -97,7 +97,7 @@ public class SMAFrame {
         os.write(frame);
     }
 
-    public static SMAFrame read(InputStream is) throws IOException {
+    public static OuterFrame read(InputStream is) throws IOException {
         byte[] header = new byte[HEADERLENGTH];
         if (is.read(header) < header.length) {
             throw new IOException("EOF");
@@ -124,7 +124,7 @@ public class SMAFrame {
             throw new IOException("EOF");
         }
 
-        Logger logger = LoggerFactory.getLogger(SMAFrame.class);
+        Logger logger = LoggerFactory.getLogger(OuterFrame.class);
         if (logger.isTraceEnabled()) {
             byte[] all = new byte[HEADERLENGTH + payloadLength];
             System.arraycopy(header, 0, all, 0, HEADERLENGTH);
@@ -137,6 +137,6 @@ public class SMAFrame {
 
         }
 
-        return new SMAFrame(control, localaddress, destaddress, payload);
+        return new OuterFrame(control, localaddress, destaddress, payload);
     }
 }

@@ -105,20 +105,20 @@ public class Bluetooth {
         in = null;
     }
 
-    public void sendSMAFrame(SMAFrame frame) throws IOException {
+    public void sendOuterFrame(OuterFrame frame) throws IOException {
         ByteArrayOutputStream temp = new ByteArrayOutputStream();
         frame.write(temp);
         out.write(temp.toByteArray());
     }
 
-    public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
-        logger.trace("receiveSMAFrame(...,{})", wait4Command);
+    public OuterFrame receiveOuterFrame(int wait4Command) throws IOException {
+        logger.trace("receiveOuterFrame(...,{})", wait4Command);
 
         int command = 0;
-        SMAFrame f = null;
+        OuterFrame f = null;
 
         do {
-            f = SMAFrame.read(in);
+            f = OuterFrame.read(in);
 
             if (destAddress.equals(f.getSourceAddress())) {
                 command = f.getControl();
@@ -138,16 +138,16 @@ public class Bluetooth {
         do {
             int command = 0;
             ByteArrayOutputStream os = null;
-            SMAFrame f = null;
+            OuterFrame f = null;
 
             do {
-                f = SMAFrame.read(in);
+                f = OuterFrame.read(in);
 
                 lastSourceAddress = f.getSourceAddress();
 
                 command = f.getControl();
-                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
-                        SMAPPPFrame.PROTOCOL)) {
+                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL,
+                        InnerFrame.PROTOCOL)) {
                     os = new ByteArrayOutputStream();
                 }
 

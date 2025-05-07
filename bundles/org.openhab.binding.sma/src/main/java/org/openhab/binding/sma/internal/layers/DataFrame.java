@@ -14,7 +14,7 @@ package org.openhab.binding.sma.internal.layers;
 
 import java.io.IOException;
 
-public class DataHeader extends SMAPPPFrame {
+public class DataFrame extends InnerFrame {
     private long n1;
     private long n2;
 

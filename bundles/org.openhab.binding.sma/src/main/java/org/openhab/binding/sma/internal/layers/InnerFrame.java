@@ -23,8 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author Martin Gerczuk - Initial contribution
  */
 @NonNullByDefault
-public class SMAPPPFrame {
-
+public class InnerFrame {
     public static final byte CONTROL = 0x03;
     public static final short PROTOCOL = 0x6065;
 
@@ -40,7 +39,7 @@ public class SMAPPPFrame {
         return 900000000 + randomGenerator.nextInt(100000000);
     }
 
-    protected final Logger logger = LoggerFactory.getLogger(DataHeader.class);
+    protected final Logger logger = LoggerFactory.getLogger(DataFrame.class);
 
     private int lengthDWords;
     private int ctrl;
@@ -54,10 +53,10 @@ public class SMAPPPFrame {
     private int pcktCount;
     private int pcktID;
 
-    public SMAPPPFrame() {
+    public InnerFrame() {
     }
 
-    public SMAPPPFrame(int lengthDWords, int ctrl, int dstSUSyID, long dstSerial, int ctrl2, short srcSUSyID,
+    public InnerFrame(int lengthDWords, int ctrl, int dstSUSyID, long dstSerial, int ctrl2, short srcSUSyID,
             long srcSerial, int ctrl3, int status, int pcktCount, int rcvPcktID) {
         this.lengthDWords = lengthDWords;
         this.ctrl = ctrl;
@@ -75,7 +74,7 @@ public class SMAPPPFrame {
     public static BinaryOutputStream writePppHeader(byte longwords, byte ctrl, short ctrl2, short dstSUSyID,
             int dstSerial, short pcktID) throws IOException {
         BinaryOutputStream b = new BinaryOutputStream();
-        new SMAPPPFrame(longwords, ctrl, dstSUSyID, dstSerial, ctrl2, APP_SUSY_ID, appSerial, ctrl2, 0, 0, pcktID)
+        new InnerFrame(longwords, ctrl, dstSUSyID, dstSerial, ctrl2, APP_SUSY_ID, appSerial, ctrl2, 0, 0, pcktID)
                 .write(b);
 
         return b;

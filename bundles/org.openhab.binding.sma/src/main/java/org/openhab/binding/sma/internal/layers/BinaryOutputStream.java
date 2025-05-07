@@ -46,7 +46,7 @@ public class BinaryOutputStream {
     }
 
     public PPPFrame toPPPFrame() {
-        return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL, SMAPPPFrame.PROTOCOL, os.toByteArray());
+        return new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, os.toByteArray());
     }
 
     public BinaryOutputStream writeByte(int v) throws IOException {
