@@ -20,6 +20,7 @@ import org.eclipse.jdt.annotation.Nullable;
  */
 @NonNullByDefault
 public class SmaBluetoothAddress {
+    public static final int NBYTES = 6;
     public static final SmaBluetoothAddress BROADCAST = new SmaBluetoothAddress("FF:FF:FF:FF:FF:FF");
 
     // stores BT address in "little endian"

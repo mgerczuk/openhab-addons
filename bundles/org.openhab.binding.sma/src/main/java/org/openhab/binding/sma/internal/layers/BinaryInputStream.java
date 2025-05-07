@@ -46,6 +46,17 @@ public class BinaryInputStream {
         pos = newPos;
     }
 
+    public byte[] readBytes(int n) throws IOException {
+        if (pos + n > buf.length) {
+            throw new IOException("read after eof");
+        }
+
+        byte[] res = new byte[n];
+        System.arraycopy(buf, pos, res, 0, n);
+        pos += n;
+        return res;
+    }
+
     public int readByte() throws IOException {
         if (pos >= buf.length) {
             throw new IOException("read after eof");

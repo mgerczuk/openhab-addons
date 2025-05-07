@@ -33,12 +33,15 @@ public class BinaryOutputStream {
         this(new ByteArrayOutputStream());
     }
 
+    public BinaryOutputStream(int size) {
+        this(new ByteArrayOutputStream(size));
+    }
+
     private BinaryOutputStream(ByteArrayOutputStream os) {
         this.os = os;
     }
 
     public byte[] toByteArray() throws IOException {
-        os.close();
         return os.toByteArray();
     }
 
@@ -63,6 +66,10 @@ public class BinaryOutputStream {
         os.write(0xFF & (v >> 16));
         os.write(0xFF & (v >> 24));
         return this;
+    }
+
+    public BinaryOutputStream writeUInt(long v) throws IOException {
+        return writeInt((int) v);
     }
 
     public BinaryOutputStream writeBytes(String s) throws IOException {

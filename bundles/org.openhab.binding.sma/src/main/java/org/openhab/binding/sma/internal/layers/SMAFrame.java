@@ -19,6 +19,8 @@ import java.io.OutputStream;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Martin Gerczuk - Initial contribution
@@ -26,13 +28,14 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 @NonNullByDefault
 public class SMAFrame {
 
+    private final Logger logger = LoggerFactory.getLogger(SMAFrame.class);
+
     // length of package header
     private static final int HEADERLENGTH = 18;
 
     private final int control;
     private final SmaBluetoothAddress sourceAddress;
     private final SmaBluetoothAddress destinationAddress;
-
     private final byte[] payload;
 
     public SMAFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
@@ -69,29 +72,29 @@ public class SMAFrame {
         return payload;
     }
 
-    public byte[] getFrame() {
+    public void write(OutputStream os) throws IOException {
         int totalLength = HEADERLENGTH + payload.length;
-        byte[] buffer = new byte[totalLength];
+        BinaryOutputStream wr = new BinaryOutputStream(totalLength);
 
-        buffer[0] = PPPFrame.HDLC_SYNC;
-        buffer[1] = (byte) (totalLength & 0xFF);
-        buffer[2] = (byte) ((totalLength >>> 8) & 0xFF);
-        buffer[3] = (byte) (buffer[0] ^ buffer[1] ^ buffer[2]);
+        wr.writeByte(PPPFrame.HDLC_SYNC);
+        wr.writeShort(totalLength);
+        byte[] cs = wr.toByteArray();
+        wr.writeByte(cs[0] ^ cs[1] ^ cs[2]);
 
-        for (int i = 0; i < 6; i++) {
-            buffer[4 + i] = sourceAddress.get(i);
+        wr.writeBytes(sourceAddress.getAddress());
+        wr.writeBytes(destinationAddress.getAddress());
+
+        wr.writeShort(control);
+
+        wr.writeBytes(payload);
+
+        byte[] frame = wr.toByteArray();
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("Sending {} bytes:\n{}", frame.length, Utils.bytesToHex(frame));
         }
 
-        for (int i = 0; i < 6; i++) {
-            buffer[10 + i] = destinationAddress.get(i);
-        }
-
-        buffer[16] = (byte) (control & 0xFF);
-        buffer[17] = (byte) (control >>> 8);
-
-        System.arraycopy(payload, 0, buffer, HEADERLENGTH, payload.length);
-
-        return buffer;
+        os.write(frame);
     }
 
     public static SMAFrame read(InputStream is) throws IOException {
@@ -100,28 +103,40 @@ public class SMAFrame {
             throw new IOException("EOF");
         }
 
-        if (header[0] != PPPFrame.HDLC_SYNC) {
+        BinaryInputStream rd = new BinaryInputStream(header);
+        int sync = rd.readByte();
+        if (sync != PPPFrame.HDLC_SYNC) {
             throw new IOException("SYNC expected");
         }
 
-        int length = le2short(header, 1) - HEADERLENGTH;
-        byte[] payload = new byte[length];
-        if (is.read(payload) < length) {
+        int payloadLength = rd.readUShort() - HEADERLENGTH;
+        int cs = rd.readByte();
+        if ((header[0] ^ header[1] ^ header[2]) != cs) {
+            throw new IOException("Checksum error");
+        }
+
+        SmaBluetoothAddress localaddress = new SmaBluetoothAddress(rd.readBytes(SmaBluetoothAddress.NBYTES));
+        SmaBluetoothAddress destaddress = new SmaBluetoothAddress(rd.readBytes(SmaBluetoothAddress.NBYTES));
+        int control = rd.readUShort();
+
+        byte[] payload = new byte[payloadLength];
+        if (is.read(payload) < payloadLength) {
             throw new IOException("EOF");
         }
 
-        SmaBluetoothAddress localaddress = new SmaBluetoothAddress(header, 4);
-        SmaBluetoothAddress destaddress = new SmaBluetoothAddress(header, 10);
-        int control = le2short(header, 16);
+        Logger logger = LoggerFactory.getLogger(SMAFrame.class);
+        if (logger.isTraceEnabled()) {
+            byte[] all = new byte[HEADERLENGTH + payloadLength];
+            System.arraycopy(header, 0, all, 0, HEADERLENGTH);
+            System.arraycopy(payload, 0, all, HEADERLENGTH, payloadLength);
+
+            logger.trace("Received {} bytes: \n{}", all.length, Utils.bytesToHex(all));
+            logger.trace("source: {}", localaddress.toString());
+            logger.trace("destination: {}", destaddress.toString());
+            logger.trace("receiving cmd {}", control);
+
+        }
 
         return new SMAFrame(control, localaddress, destaddress, payload);
-    }
-
-    public void write(OutputStream os) throws IOException {
-        os.write(getFrame());
-    }
-
-    private static int le2short(byte[] buffer, int i) {
-        return (buffer[i] & 0xff) | ((buffer[i + 1] << 8) & 0xff00);
     }
 }

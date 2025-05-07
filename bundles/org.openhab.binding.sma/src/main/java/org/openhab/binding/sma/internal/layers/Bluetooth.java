@@ -108,10 +108,7 @@ public class Bluetooth {
     public void sendSMAFrame(SMAFrame frame) throws IOException {
         ByteArrayOutputStream temp = new ByteArrayOutputStream();
         frame.write(temp);
-        byte[] buffer = temp.toByteArray();
-
-        logger.trace("Sending {} bytes:\n{}", buffer.length, Utils.bytesToHex(buffer));
-        out.write(buffer);
+        out.write(temp.toByteArray());
     }
 
     public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
@@ -123,14 +120,7 @@ public class Bluetooth {
         do {
             f = SMAFrame.read(in);
 
-            logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
-
             if (destAddress.equals(f.getSourceAddress())) {
-                logger.trace("source: {}", f.getSourceAddress().toString());
-                logger.trace("destination: {}", f.getDestinationAddress().toString());
-
-                logger.trace("receiving cmd {}", f.getControl());
-
                 command = f.getControl();
             }
         } while ((command != wait4Command) && (0xFF != wait4Command));
@@ -152,12 +142,6 @@ public class Bluetooth {
 
             do {
                 f = SMAFrame.read(in);
-
-                logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
-                logger.trace("source: {}", f.getSourceAddress().toString());
-                logger.trace("destination: {}", f.getDestinationAddress().toString());
-
-                logger.trace("receiving cmd {}", f.getControl());
 
                 lastSourceAddress = f.getSourceAddress();
 

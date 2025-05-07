@@ -119,31 +119,31 @@ public class BluetoothSolarInverterPlant {
 
             // Connection to Root Device
             frame = layer.receiveSMAFrame(0x0A);
-            byte[] data = frame.getPayload();
+            byte[] data1 = frame.getPayload();
 
             // If Root Device has changed, copy the new address
-            if (data[6] == 2) {
-                rootDeviceAdress.setAddress(data, 0);
+            if (data1[6] == 2) {
+                rootDeviceAdress.setAddress(data1, 0);
                 layer.setDestAddress(rootDeviceAdress);
             }
             logger.debug("Root device address: {}", rootDeviceAdress);
 
             // Get local BT address
-            localDeviceAdress.setAddress(data, 7);
+            localDeviceAdress.setAddress(data1, 7);
             layer.setLocalAddress(localDeviceAdress);
             logger.debug("Local BT address: {}", localDeviceAdress);
 
             frame = layer.receiveSMAFrame(0x05);
-            data = frame.getPayload();
+            byte[] data2 = frame.getPayload();
 
             // Get network topology
             int devcount = 1;
             inverters = new ArrayList<BluetoothSolarInverterPlant.Data>();
 
-            for (int ptr = 0; ptr < data.length; ptr += 8) {
-                SmaBluetoothAddress address = new SmaBluetoothAddress(data, ptr);
+            for (int ptr = 0; ptr < data2.length; ptr += 8) {
+                SmaBluetoothAddress address = new SmaBluetoothAddress(data2, ptr);
                 // Inverters only - Ignore other devices
-                if (data[ptr + 6] == 0x01 && data[ptr + 7] == 0x01) {
+                if (data2[ptr + 6] == 0x01 && data2[ptr + 7] == 0x01) {
                     logger.debug("Device {}: found SMA Inverter @ {}", devcount, address);
                     Data inverter = new BluetoothSolarInverterPlant.Data(address);
                     inverter.setNetID(netID);
@@ -197,7 +197,6 @@ public class BluetoothSolarInverterPlant {
                     // is allowed
                     try {
                         frame = layer.receiveSMAFrame(0xFF);
-                        data = frame.getFrame();
                         packetType = frame.getControl();
                         break;
                     } catch (IOException e) {
@@ -213,7 +212,6 @@ public class BluetoothSolarInverterPlant {
                 if (0x1001 == packetType) {
                     packetType = 0; // reset it
                     frame = layer.receiveSMAFrame(0x05);
-                    data = frame.getFrame();
                     packetType = frame.getControl();
                 }
 
@@ -226,22 +224,22 @@ public class BluetoothSolarInverterPlant {
                      */
 
                     // Get network topology
-                    data = frame.getPayload();
+                    byte[] data3 = frame.getPayload();
                     int pcktsize = frame.getPayload().length;
                     devcount = 1;
                     inverters.clear();
 
                     for (int ptr = 0; ptr < pcktsize; ptr += 8) {
                         if (logger.isDebugEnabled()) {
-                            SmaBluetoothAddress dest = new SmaBluetoothAddress(data, ptr);
+                            SmaBluetoothAddress dest = new SmaBluetoothAddress(data3, ptr);
                             logger.debug("Device {}: {} -> ", devcount, dest);
                         }
 
                         // Inverters only - Ignore other devices
-                        if (data[ptr + 6] == 0x01 && data[ptr + 7] == 0x01) {
+                        if (data3[ptr + 6] == 0x01 && data3[ptr + 7] == 0x01) {
                             logger.debug("Inverter");
 
-                            SmaBluetoothAddress address = new SmaBluetoothAddress(data, ptr);
+                            SmaBluetoothAddress address = new SmaBluetoothAddress(data3, ptr);
 
                             BluetoothSolarInverterPlant.Data inverter = new BluetoothSolarInverterPlant.Data(address);
                             inverter.setNetID(netID);
@@ -260,7 +258,6 @@ public class BluetoothSolarInverterPlant {
                  */
                 if (0x06 != packetType) {
                     frame = layer.receiveSMAFrame(0x06);
-                    data = frame.getFrame();
                     packetType = frame.getControl();
                 }
             }
@@ -289,12 +286,12 @@ public class BluetoothSolarInverterPlant {
             SmaBluetoothAddress address = new SmaBluetoothAddress();
             for (int i = 0; i < inverters.size(); i++) {
                 PPPFrame pppFrame = layer.receivePPPFrame(pcktID);
-                data = pppFrame.getPayload();
+                byte[] data4 = pppFrame.getPayload();
                 address = pppFrame.getFrameSourceAddress();
 
                 BluetoothSolarInverterPlant.Data current = this.invertersByAddress.get(address.toString());
                 if (current != null) {
-                    SmaSerial serial = new SmaSerial((short) Utils.getShort(data, 50), Utils.getInt(data, 52));
+                    SmaSerial serial = new SmaSerial((short) Utils.getShort(data4, 50), Utils.getInt(data4, 52));
                     current.setSerial(serial);
 
                     logger.debug("SUSyID: {} - SN: {}\n", serial.suSyID, serial.serial);
@@ -474,7 +471,7 @@ public class BluetoothSolarInverterPlant {
                         return false;
                     }
 
-                    SmaSerial serial = new SmaSerial(hdr.getSuSyID(), hdr.getSerial());
+                    SmaSerial serial = new SmaSerial(hdr.getSrcSUSyID(), hdr.getSrcSerial());
                     BluetoothSolarInverterPlant.Data current = invertersBySerial.get(serial);
 
                     if (current == null) {
