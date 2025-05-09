@@ -30,6 +30,7 @@ import org.openhab.binding.sma.internal.layers.BinaryOutputStream;
 import org.openhab.binding.sma.internal.layers.Bluetooth;
 import org.openhab.binding.sma.internal.layers.DataFrame;
 import org.openhab.binding.sma.internal.layers.InnerFrame;
+import org.openhab.binding.sma.internal.layers.InnerFrame.Address;
 import org.openhab.binding.sma.internal.layers.OuterFrame;
 import org.openhab.binding.sma.internal.layers.PPPFrame;
 import org.openhab.binding.sma.internal.layers.Utils;
@@ -97,19 +98,19 @@ public class BluetoothSolarInverterPlant {
 
         try {
             // query SMA Net ID
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_0x0201, layer.getLocalAddress(),
+            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_CONF_ACCES_REQ, layer.getLocalAddress(),
                     new SmaBluetoothAddress(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }), //
                     new BinaryOutputStream()//
                             .writeBytes("ver\r\n")//
                             .toByteArray()));
 
             // This can take up to 3 seconds!
-            OuterFrame frame = layer.receiveOuterFrame(OuterFrame.CMD_HELLO);
+            OuterFrame frame = layer.receiveOuterFrame(OuterFrame.CMD_VERINFO);
             int netID = frame.getPayload()[4];
             logger.debug("SMA netID = {}\n", netID);
 
             // check root device Address
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_HELLO, layer.getLocalAddress(), layer.getDestAddress(), //
+            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_VERINFO, layer.getLocalAddress(), layer.getDestAddress(), //
                     new BinaryOutputStream()//
                             .writeInt(0x00700400)//
                             .writeByte(netID)//
@@ -118,7 +119,7 @@ public class BluetoothSolarInverterPlant {
                             .toByteArray()));
 
             // Connection to Root Device
-            frame = layer.receiveOuterFrame(OuterFrame.CMD_0x000A);
+            frame = layer.receiveOuterFrame(OuterFrame.CMD_ROOTID);
             byte[] data1 = frame.getPayload();
 
             // If Root Device has changed, copy the new address
@@ -133,7 +134,7 @@ public class BluetoothSolarInverterPlant {
             layer.setLocalAddress(localDeviceAdress);
             logger.debug("Local BT address: {}", localDeviceAdress);
 
-            frame = layer.receiveOuterFrame(OuterFrame.CMD_0x0005);
+            frame = layer.receiveOuterFrame(OuterFrame.CMD_NODEINFO);
             byte[] data2 = frame.getPayload();
 
             // Get network topology
@@ -163,27 +164,27 @@ public class BluetoothSolarInverterPlant {
                 // We need more handshake 03/04 commands to initialise network
                 // connection between inverters
                 layer.sendOuterFrame(
-                        new OuterFrame(OuterFrame.CMD_GETVAR, layer.getLocalAddress(), layer.getDestAddress(), //
+                        new OuterFrame(OuterFrame.CMD_PARAMREQ, layer.getLocalAddress(), layer.getDestAddress(), //
                                 new BinaryOutputStream()//
                                         .writeShort(0x000A)//
                                         .writeByte(0xAC)//
                                         .toByteArray()));
-                layer.receiveOuterFrame(OuterFrame.CMD_VARIABLE);
+                layer.receiveOuterFrame(OuterFrame.CMD_PARAMCONFIRM);
 
                 layer.sendOuterFrame(
-                        new OuterFrame(OuterFrame.CMD_GETVAR, layer.getLocalAddress(), layer.getDestAddress(), //
+                        new OuterFrame(OuterFrame.CMD_PARAMREQ, layer.getLocalAddress(), layer.getDestAddress(), //
                                 new BinaryOutputStream()//
                                         .writeShort(0x0002)//
                                         .toByteArray()));
-                layer.receiveOuterFrame(OuterFrame.CMD_VARIABLE);
+                layer.receiveOuterFrame(OuterFrame.CMD_PARAMCONFIRM);
 
                 layer.sendOuterFrame(
-                        new OuterFrame(OuterFrame.CMD_GETVAR, layer.getLocalAddress(), layer.getDestAddress(), //
+                        new OuterFrame(OuterFrame.CMD_PARAMREQ, layer.getLocalAddress(), layer.getDestAddress(), //
                                 new BinaryOutputStream()//
                                         .writeShort(0x0001)//
                                         .writeByte(0x01)//
                                         .toByteArray()));
-                layer.receiveOuterFrame(OuterFrame.CMD_VARIABLE);
+                layer.receiveOuterFrame(OuterFrame.CMD_PARAMCONFIRM);
 
                 /******************************************************************
                  * Read the network topology Waiting for a max of 60 sec - 6
@@ -200,7 +201,7 @@ public class BluetoothSolarInverterPlant {
                     // is allowed
                     try {
                         frame = layer.receiveOuterFrame(OuterFrame.CMD_ANY);
-                        packetType = frame.getControl();
+                        packetType = frame.getCommand();
                         break;
                     } catch (IOException e) {
                     }
@@ -212,15 +213,15 @@ public class BluetoothSolarInverterPlant {
                     throw new IOException("In case of single inverter system set MIS_Enabled=0 in config file.");
                 }
 
-                if (OuterFrame.CMD_0x1001 == packetType) {
+                if (OuterFrame.CMD_UPLINK_TABLE == packetType) {
                     packetType = 0; // reset it
-                    frame = layer.receiveOuterFrame(OuterFrame.CMD_0x0005);
-                    packetType = frame.getControl();
+                    frame = layer.receiveOuterFrame(OuterFrame.CMD_NODEINFO);
+                    packetType = frame.getCommand();
                 }
 
                 logger.debug("PacketType ({})\n", packetType);
 
-                if (OuterFrame.CMD_0x0005 == packetType) {
+                if (OuterFrame.CMD_NODEINFO == packetType) {
                     /*
                      * Get network topology Overwrite all found inverters
                      * starting at index 1
@@ -259,9 +260,9 @@ public class BluetoothSolarInverterPlant {
                  * 0x0006 (NETWORK IS READY") If not, just wait for it and
                  * ignore any error
                  */
-                if (OuterFrame.CMD_0x0006 != packetType) {
-                    frame = layer.receiveOuterFrame(OuterFrame.CMD_0x0006);
-                    packetType = frame.getControl();
+                if (OuterFrame.CMD_NETW_ESTAB != packetType) {
+                    frame = layer.receiveOuterFrame(OuterFrame.CMD_NETW_ESTAB);
+                    packetType = frame.getCommand();
                 }
             }
 
@@ -275,15 +276,15 @@ public class BluetoothSolarInverterPlant {
             }
 
             // Send broadcast request for identification
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_PPPFRAME, layer.getLocalAddress(),
-                    SmaBluetoothAddress.BROADCAST, //
-                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
-                            new InnerFrame(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL, 0x00, 0x00, ++pcktID) //
-                                    .stream()//
-                                    .writeInt(0x00000200)//
-                                    .writeInt(0x0)//
-                                    .writeInt(0x0)//
-                                    .toByteArray())));
+            layer.sendOuterFrame(
+                    new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
+                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
+                                    new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID) //
+                                            .stream()//
+                                            .writeInt(0x00000200)//
+                                            .writeInt(0x0)//
+                                            .writeInt(0x0)//
+                                            .toByteArray())));
 
             // All inverters *should* reply with their SUSyID & SerialNr
             // (and some other unknown info)
@@ -344,18 +345,18 @@ public class BluetoothSolarInverterPlant {
 
             now = layer.currentTimeSeconds();
 
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_PPPFRAME, layer.getLocalAddress(),
-                    SmaBluetoothAddress.BROADCAST, //
-                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
-                            new InnerFrame(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL, 0x01, 0x01, ++pcktID)//
-                                    .stream()//
-                                    .writeInt(0xFFFD040C)//
-                                    .writeInt(userGroup.getValue()) // User / Installer
-                                    .writeInt(0x00000384) // Timeout = 900sec ?
-                                    .writeInt(now)//
-                                    .writeInt(0x0)//
-                                    .writeBytes(pw)//
-                                    .toByteArray())));
+            layer.sendOuterFrame(
+                    new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
+                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                                    new InnerFrame(destAny(), srcMyself(0x01), 0x01, ++pcktID)//
+                                            .stream()//
+                                            .writeInt(0xFFFD040C)//
+                                            .writeInt(userGroup.getValue()) // User / Installer
+                                            .writeInt(0x00000384) // Timeout = 900sec ?
+                                            .writeInt(now)//
+                                            .writeInt(0x0)//
+                                            .writeBytes(pw)//
+                                            .toByteArray())));
 
             do {
                 // All inverters *should* reply with their SUSyID & SerialNr
@@ -386,14 +387,14 @@ public class BluetoothSolarInverterPlant {
     public void logoff() throws IOException {
         logger.debug("logoff SMA Inverter");
         try {
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_PPPFRAME, layer.getLocalAddress(),
-                    SmaBluetoothAddress.BROADCAST, //
-                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
-                            new InnerFrame(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL, 0x03, 0x03, ++pcktID) //
-                                    .stream()//
-                                    .writeInt(0xFFFD010E)//
-                                    .writeInt(0xFFFFFFFF)//
-                                    .toByteArray())));
+            layer.sendOuterFrame(
+                    new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
+                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                                    new InnerFrame(destAny(), srcMyself(0x03), 0x03, ++pcktID) //
+                                            .stream()//
+                                            .writeInt(0xFFFD010E)//
+                                            .writeInt(0xFFFFFFFF)//
+                                            .toByteArray())));
         } catch (IOException e) {
             throw new IOException("logoff failed: " + e.getMessage());
         }
@@ -409,10 +410,9 @@ public class BluetoothSolarInverterPlant {
             logger.debug("Local Time: {}", new Date(localtime * 1000L));
             logger.debug("TZ offset (s): {}", tzOffset);
 
-            pcktID++;
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_PPPFRAME, layer.getLocalAddress(), rootDeviceAdress, //
+            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), rootDeviceAdress, //
                     new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
-                            new InnerFrame(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL, 0x00, 0x00, pcktID)//
+                            new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID)//
                                     .stream() //
                                     .writeInt(0xF000020A)//
                                     .writeInt(0x00236D00)//
@@ -453,15 +453,15 @@ public class BluetoothSolarInverterPlant {
         boolean validPcktID = false;
 
         try {
-            layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_PPPFRAME, layer.getLocalAddress(),
-                    SmaBluetoothAddress.BROADCAST, //
-                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
-                            new InnerFrame(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL, 0x00, 0x00, ++pcktID)//
-                                    .stream()//
-                                    .writeInt(type.getCommand())//
-                                    .writeInt(type.getFirst())//
-                                    .writeInt(type.getLast())//
-                                    .toByteArray())));
+            layer.sendOuterFrame(
+                    new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
+                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
+                                    new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID)//
+                                            .stream()//
+                                            .writeInt(type.getCommand())//
+                                            .writeInt(type.getFirst())//
+                                            .writeInt(type.getLast())//
+                                            .toByteArray())));
 
             for (int j = 0; j < inverters.size(); j++) {
                 validPcktID = false;
@@ -605,6 +605,14 @@ public class BluetoothSolarInverterPlant {
             return false;
         }
         return true;
+    }
+
+    private Address destAny() {
+        return new Address(0xA0, InnerFrame.ANYSUSYID, InnerFrame.ANYSERIAL);
+    }
+
+    private Address srcMyself(int header) {
+        return new Address(header, InnerFrame.APP_SUSY_ID, InnerFrame.appSerial);
     }
 
     @Override

@@ -33,27 +33,30 @@ public class OuterFrame {
     // length of package header
     private static final int HEADERLENGTH = 18;
 
-    public static final int CMD_PPPFRAME = 1;
-    public static final int CMD_PPPFRAME_FRAGMENT = 8;
-
-    public static final int CMD_HELLO = 2;
-    public static final int CMD_GETVAR = 3;
-    public static final int CMD_VARIABLE = 4;
-    public static final int CMD_0x0005 = 5;
-    public static final int CMD_0x0006 = 6;
-    public static final int CMD_0x000A = 10;
-    public static final int CMD_0x1001 = 0x1001;
-    public static final int CMD_0x0201 = 0x0201;
+    public static final int CMD_USERDATA = 1;
+    public static final int CMD_VERINFO = 2;
+    public static final int CMD_PARAMREQ = 3;
+    public static final int CMD_PARAMCONFIRM = 4;
+    public static final int CMD_NODEINFO = 5;
+    public static final int CMD_NETW_ESTAB = 6;
+    public static final int CMD_ERRORINDIC = 7;
+    public static final int CMD_USERDATAMORE = 8;
+    public static final int CMD_ECUDATA = 9;
+    public static final int CMD_ROOTID = 10;
+    public static final int CMD_INFO_INDICATION = 12;
+    public static final int CMD_CONF_ACCES_REQ = 0x0201;
+    public static final int CMD_CONF_ACCES_INDICATION = 0x0202;
+    public static final int CMD_UPLINK_TABLE = 0x1001;
 
     public static final int CMD_ANY = 0xFF;
 
-    private final int control;
+    private final int command;
     private final SmaBluetoothAddress sourceAddress;
     private final SmaBluetoothAddress destinationAddress;
     private final byte[] payload;
 
-    public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
-        this.control = control;
+    public OuterFrame(int command, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, byte[] payload) {
+        this.command = command;
         this.sourceAddress = localaddress;
         this.destinationAddress = destaddress;
         this.payload = payload;
@@ -61,7 +64,7 @@ public class OuterFrame {
 
     public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, PPPFrame frame)
             throws IOException {
-        this.control = control;
+        this.command = control;
         this.sourceAddress = localaddress;
         this.destinationAddress = destaddress;
 
@@ -70,8 +73,8 @@ public class OuterFrame {
         payload = os.toByteArray();
     }
 
-    public int getControl() {
-        return control;
+    public int getCommand() {
+        return command;
     }
 
     public SmaBluetoothAddress getSourceAddress() {
@@ -98,7 +101,7 @@ public class OuterFrame {
         wr.writeBytes(sourceAddress.getAddress());
         wr.writeBytes(destinationAddress.getAddress());
 
-        wr.writeShort(control);
+        wr.writeShort(command);
 
         wr.writeBytes(payload);
 
