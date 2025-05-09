@@ -121,7 +121,7 @@ public class Bluetooth {
             if (destAddress.equals(f.getSourceAddress())) {
                 command = f.getControl();
             }
-        } while ((command != wait4Command) && (0xFF != wait4Command));
+        } while ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command));
 
         return f;
     }
@@ -153,7 +153,7 @@ public class Bluetooth {
                     os.write(f.getPayload());
                 }
 
-            } while (command != 1);
+            } while (command != OuterFrame.CMD_PPPFRAME);
 
             if (os != null) {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());

@@ -42,9 +42,11 @@ public class StreamConnectionDebug implements StreamConnection {
     static class CheckOutputStream extends OutputStream {
 
         ByteArrayInputStream is;
+        int pos;
 
         public CheckOutputStream(byte[] expected) {
             is = new ByteArrayInputStream(expected);
+            pos = 0;
         }
 
         @Override
@@ -53,7 +55,9 @@ public class StreamConnectionDebug implements StreamConnection {
             if (nextb > 127) {
                 nextb -= 256;
             }
-            assertEquals(nextb, b);
+            assertEquals(nextb, b, String.format("Write diff at offset %d", pos));
+
+            pos++;
         }
     }
 

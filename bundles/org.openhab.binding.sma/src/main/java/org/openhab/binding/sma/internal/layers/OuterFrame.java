@@ -33,6 +33,20 @@ public class OuterFrame {
     // length of package header
     private static final int HEADERLENGTH = 18;
 
+    public static final int CMD_PPPFRAME = 1;
+    public static final int CMD_PPPFRAME_FRAGMENT = 8;
+
+    public static final int CMD_HELLO = 2;
+    public static final int CMD_GETVAR = 3;
+    public static final int CMD_VARIABLE = 4;
+    public static final int CMD_0x0005 = 5;
+    public static final int CMD_0x0006 = 6;
+    public static final int CMD_0x000A = 10;
+    public static final int CMD_0x1001 = 0x1001;
+    public static final int CMD_0x0201 = 0x0201;
+
+    public static final int CMD_ANY = 0xFF;
+
     private final int control;
     private final SmaBluetoothAddress sourceAddress;
     private final SmaBluetoothAddress destinationAddress;

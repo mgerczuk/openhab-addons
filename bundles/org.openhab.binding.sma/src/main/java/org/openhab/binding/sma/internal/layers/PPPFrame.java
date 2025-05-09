@@ -51,6 +51,8 @@ public class PPPFrame {
         this.control = control;
         this.protocol = protocol;
         this.payload = payload;
+
+        assert payload.length % 4 == 0;
     }
 
     public byte getAddress() {
@@ -85,6 +87,8 @@ public class PPPFrame {
         frame[2] = control;
         short2be(frame, 3, protocol);
 
+        // recalc length
+        payload[0] = (byte) (payload.length / 4);
         System.arraycopy(payload, 0, frame, 5, payload.length);
 
         CRC crc = new CRC();

@@ -31,8 +31,8 @@ public class DataFrame extends InnerFrame {
         n2 = rd.readUInt(); // 32
 
         logger.debug("              {}", String.format("0x%08X", unkn3));
-        logger.debug("  c         = {}", n1);
-        logger.debug("  b         = {}", n2);
+        logger.debug("  n1        = {}", n1);
+        logger.debug("  n2        = {}", n2);
     }
 
     public int getRecordSize() {
