@@ -62,7 +62,7 @@ public class OuterFrame {
         this.payload = payload;
     }
 
-    public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, PPPFrame frame)
+    public OuterFrame(int control, SmaBluetoothAddress localaddress, SmaBluetoothAddress destaddress, SMANetFrame frame)
             throws IOException {
         this.command = control;
         this.sourceAddress = localaddress;

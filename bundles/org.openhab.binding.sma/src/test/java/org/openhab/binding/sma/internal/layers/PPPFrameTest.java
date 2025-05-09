@@ -60,7 +60,7 @@ class PPPFrameTest {
                 0x00, (byte) 0xFE, (byte) 0xFF, (byte) 0xFF, 0x00, (byte) 0xFE, (byte) 0xFF, (byte) 0xFF, 0x00 };
 
         try {
-            PPPFrame f = PPPFrame.read(is);
+            SMANetFrame f = SMANetFrame.read(is);
 
             assertEquals(-1, f.getAddress());
             assertEquals(3, f.getControl());

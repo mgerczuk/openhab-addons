@@ -32,7 +32,7 @@ import org.openhab.binding.sma.internal.layers.DataFrame;
 import org.openhab.binding.sma.internal.layers.InnerFrame;
 import org.openhab.binding.sma.internal.layers.InnerFrame.Address;
 import org.openhab.binding.sma.internal.layers.OuterFrame;
-import org.openhab.binding.sma.internal.layers.PPPFrame;
+import org.openhab.binding.sma.internal.layers.SMANetFrame;
 import org.openhab.binding.sma.internal.layers.Utils;
 import org.openhab.binding.sma.internal.layers.Value;
 import org.openhab.core.library.types.DecimalType;
@@ -278,7 +278,7 @@ public class BluetoothSolarInverterPlant {
             // Send broadcast request for identification
             layer.sendOuterFrame(
                     new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
+                            new SMANetFrame(//
                                     new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID) //
                                             .stream()//
                                             .writeInt(0x00000200)//
@@ -290,7 +290,7 @@ public class BluetoothSolarInverterPlant {
             // (and some other unknown info)
             SmaBluetoothAddress address = new SmaBluetoothAddress();
             for (int i = 0; i < inverters.size(); i++) {
-                PPPFrame pppFrame = layer.receivePPPFrame(pcktID);
+                SMANetFrame pppFrame = layer.receivePPPFrame(pcktID);
                 byte[] data4 = pppFrame.getPayload();
                 address = pppFrame.getFrameSourceAddress();
 
@@ -347,7 +347,7 @@ public class BluetoothSolarInverterPlant {
 
             layer.sendOuterFrame(
                     new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            new SMANetFrame(//
                                     new InnerFrame(destAny(), srcMyself(0x01), 0x01, ++pcktID)//
                                             .stream()//
                                             .writeInt(0xFFFD040C)//
@@ -362,7 +362,7 @@ public class BluetoothSolarInverterPlant {
                 // All inverters *should* reply with their SUSyID & SerialNr
                 // (and some other unknown info)
                 for (int i = 0; i < inverters.size(); i++) {
-                    PPPFrame frame = layer.receivePPPFrame(pcktID);
+                    SMANetFrame frame = layer.receivePPPFrame(pcktID);
                     byte[] data = frame.getPayload();
                     SmaBluetoothAddress address = frame.getFrameSourceAddress();
 
@@ -389,7 +389,7 @@ public class BluetoothSolarInverterPlant {
         try {
             layer.sendOuterFrame(
                     new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                            new SMANetFrame(//
                                     new InnerFrame(destAny(), srcMyself(0x03), 0x03, ++pcktID) //
                                             .stream()//
                                             .writeInt(0xFFFD010E)//
@@ -411,7 +411,7 @@ public class BluetoothSolarInverterPlant {
             logger.debug("TZ offset (s): {}", tzOffset);
 
             layer.sendOuterFrame(new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), rootDeviceAdress, //
-                    new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL,
+                    new SMANetFrame(//
                             new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID)//
                                     .stream() //
                                     .writeInt(0xF000020A)//
@@ -434,15 +434,6 @@ public class BluetoothSolarInverterPlant {
         return inverters;
     }
 
-    public static final void readBTAddress(byte[] src, byte[] dest, int start) {
-        dest[0] = src[start + 5];
-        dest[1] = src[start + 4];
-        dest[2] = src[start + 3];
-        dest[3] = src[start + 2];
-        dest[4] = src[start + 1];
-        dest[5] = src[start + 0];
-    }
-
     public boolean getInverterData(InverterQuery type) {
         logger.debug("getInverterData({})\n", type);
 
@@ -455,7 +446,7 @@ public class BluetoothSolarInverterPlant {
         try {
             layer.sendOuterFrame(
                     new OuterFrame(OuterFrame.CMD_USERDATA, layer.getLocalAddress(), SmaBluetoothAddress.BROADCAST, //
-                            new PPPFrame(PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL, InnerFrame.PROTOCOL, //
+                            new SMANetFrame(//
                                     new InnerFrame(destAny(), srcMyself(0x00), 0x00, ++pcktID)//
                                             .stream()//
                                             .writeInt(type.getCommand())//
@@ -466,7 +457,7 @@ public class BluetoothSolarInverterPlant {
             for (int j = 0; j < inverters.size(); j++) {
                 validPcktID = false;
                 do {
-                    PPPFrame frame = layer.receivePPPFrame(pcktID);
+                    SMANetFrame frame = layer.receivePPPFrame(pcktID);
                     byte[] data = frame.getPayload();
                     BinaryInputStream rd = new BinaryInputStream(data);
 

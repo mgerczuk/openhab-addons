@@ -126,10 +126,10 @@ public class Bluetooth {
         return f;
     }
 
-    public PPPFrame receivePPPFrame(short pktId) throws IOException {
+    public SMANetFrame receivePPPFrame(short pktId) throws IOException {
         logger.trace("receivePPPFrame({})", pktId);
 
-        PPPFrame ppp = null;
+        SMANetFrame ppp = null;
         short rcvpcktID = -1;
         SmaBluetoothAddress lastSourceAddress;
 
@@ -144,8 +144,7 @@ public class Bluetooth {
                 lastSourceAddress = f.getSourceAddress();
 
                 command = f.getCommand();
-                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, InnerFrame.CONTROL,
-                        InnerFrame.PROTOCOL)) {
+                if (SMANetFrame.peek(f.getPayload())) {
                     os = new ByteArrayOutputStream();
                 }
 
@@ -157,7 +156,7 @@ public class Bluetooth {
 
             if (os != null) {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-                ppp = PPPFrame.read(is);
+                ppp = SMANetFrame.read(is);
                 ppp.setFrameSourceAddress(lastSourceAddress);
             }
 

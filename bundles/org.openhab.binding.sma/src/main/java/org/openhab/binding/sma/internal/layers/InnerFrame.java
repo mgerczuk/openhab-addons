@@ -24,9 +24,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class InnerFrame {
-    public static final byte CONTROL = 0x03;
-    public static final short PROTOCOL = 0x6065;
-
     // Generate a Serial Number for application
     public static final short APP_SUSY_ID = 125;
     public static int appSerial = generateAppSerial();
@@ -83,7 +80,7 @@ public class InnerFrame {
     }
 
     public void write(BinaryOutputStream wr) throws IOException {
-        wr.writeByte(0); // written in PPPFrame.getFrame()
+        wr.writeByte(0); // written in SMANetFrame.getFrame()
         wr.writeByte(dst.header);
         wr.writeShort(dst.suSyID);
         wr.writeUInt(dst.serial);
