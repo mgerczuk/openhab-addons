@@ -105,65 +105,50 @@ public class Bluetooth {
         in = null;
     }
 
-    public void sendSMAFrame(SMAFrame frame) throws IOException {
-        ByteArrayOutputStream temp = new ByteArrayOutputStream();
-        frame.write(temp);
-        byte[] buffer = temp.toByteArray();
-
-        logger.trace("Sending {} bytes:\n{}", buffer.length, Utils.bytesToHex(buffer));
-        out.write(buffer);
+    public void sendOuterFrame(OuterFrame frame) throws IOException {
+        frame.write(out);
     }
 
-    public SMAFrame receiveSMAFrame(int wait4Command) throws IOException {
-        logger.trace("receiveSMAFrame(...,{})", wait4Command);
+    public OuterFrame receiveOuterFrame(int wait4Command) throws IOException {
+        logger.trace("receiveOuterFrame(...,{})", wait4Command);
 
         int command = 0;
-        SMAFrame f = null;
+        OuterFrame f = null;
 
         do {
-            f = SMAFrame.read(in);
-
-            logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
+            f = OuterFrame.read(in);
 
             if (destAddress.equals(f.getSourceAddress())) {
-                logger.trace("source: {}", f.getSourceAddress().toString());
-                logger.trace("destination: {}", f.getDestinationAddress().toString());
-
-                logger.trace("receiving cmd {}", f.getControl());
-
-                command = f.getControl();
+                command = f.getCommand();
             }
-        } while ((command != wait4Command) && (0xFF != wait4Command));
+
+            if ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command)) {
+                logger.info("receiveOuterFrame: expected command {} but was {} - ignored!", wait4Command, command);
+            }
+        } while ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command));
 
         return f;
     }
 
-    public PPPFrame receivePPPFrame(short pktId) throws IOException {
+    public SMANetFrame receivePPPFrame(short pktId) throws IOException {
         logger.trace("receivePPPFrame({})", pktId);
 
-        PPPFrame ppp = null;
+        SMANetFrame ppp = null;
         short rcvpcktID = -1;
         SmaBluetoothAddress lastSourceAddress;
 
         do {
             int command = 0;
             ByteArrayOutputStream os = null;
-            SMAFrame f = null;
+            OuterFrame f = null;
 
             do {
-                f = SMAFrame.read(in);
-
-                logger.trace("data received: \n{}", Utils.bytesToHex(f.getFrame()));
-                logger.trace("source: {}", f.getSourceAddress().toString());
-                logger.trace("destination: {}", f.getDestinationAddress().toString());
-
-                logger.trace("receiving cmd {}", f.getControl());
+                f = OuterFrame.read(in);
 
                 lastSourceAddress = f.getSourceAddress();
 
-                command = f.getControl();
-                if (PPPFrame.peek(f.getPayload(), PPPFrame.HDLC_ADR_BROADCAST, SMAPPPFrame.CONTROL,
-                        SMAPPPFrame.PROTOCOL)) {
+                command = f.getCommand();
+                if (SMANetFrame.peek(f.getPayload())) {
                     os = new ByteArrayOutputStream();
                 }
 
@@ -171,21 +156,28 @@ public class Bluetooth {
                     os.write(f.getPayload());
                 }
 
-            } while (command != 1);
+                if ((command != OuterFrame.CMD_USERDATAMORE) && (command != OuterFrame.CMD_USERDATA)) {
+                    logger.info("receivePPPFrame: expecting command CMD_USERDATA* but was {} - ignored!", command);
+                }
+
+            } while (command != OuterFrame.CMD_USERDATA);
 
             if (os != null) {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-                ppp = PPPFrame.read(is);
+                ppp = SMANetFrame.read(is);
                 ppp.setFrameSourceAddress(lastSourceAddress);
             }
 
-            rcvpcktID = (ppp == null || ppp.payload.length < 24) ? -1
-                    : (short) (Utils.getShort(ppp.payload, 22) & 0x7FFF);
+            rcvpcktID = (ppp == null || ppp.getPayload().length < 24) ? -1
+                    : (short) (Utils.getShort(ppp.getPayload(), 22) & 0x7FFF);
 
             if (ppp != null) {
                 logger.trace("rcvpcktID id {}", rcvpcktID);
             }
 
+            if (rcvpcktID != pktId) {
+                logger.info("receivePPPFrame: expecting pktId {} but was {} - ignored!", pktId, rcvpcktID);
+            }
         } while (rcvpcktID != pktId);
 
         return ppp;

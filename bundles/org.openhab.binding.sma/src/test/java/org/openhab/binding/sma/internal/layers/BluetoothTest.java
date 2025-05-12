@@ -51,7 +51,7 @@ public class BluetoothTest {
                 "00 00 01 01 00 00");
         try {
             bt.open();
-            PPPFrame frame = bt.receivePPPFrame((short) 2);
+            SMANetFrame frame = bt.receivePPPFrame((short) 2);
 
             assertTrue(Arrays.equals(expected, frame.getPayload()));
         } catch (IOException e) {
@@ -103,7 +103,7 @@ public class BluetoothTest {
         bt.setDebugData(read, null);
         try {
             bt.open();
-            PPPFrame frame = bt.receivePPPFrame((short) 11);
+            SMANetFrame frame = bt.receivePPPFrame((short) 11);
 
             assertArrayEquals(expected, frame.getFrame());
         } catch (IOException e) {

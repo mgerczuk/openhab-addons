@@ -19,7 +19,6 @@ import java.io.OutputStream;
 import java.util.Arrays;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.sma.internal.hardware.devices.SmaBluetoothAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,15 +37,12 @@ public class PPPFrame {
     static final byte HDLC_ESC = 0x7d;
     static final byte HDLC_SYNC = 0x7e;
 
-    private byte address;
-    private byte control;
-    private short protocol;
+    protected final byte address;
+    protected final byte control;
+    protected final short protocol;
+    protected final byte[] payload;
 
-    byte[] payload;
-
-    private SmaBluetoothAddress frameSourceAddress = new SmaBluetoothAddress();
-
-    public PPPFrame(byte address, byte control, short protocol, byte[] payload) {
+    protected PPPFrame(byte address, byte control, short protocol, byte[] payload) {
         this.address = address;
         this.control = control;
         this.protocol = protocol;
@@ -67,14 +63,6 @@ public class PPPFrame {
 
     public byte[] getPayload() {
         return payload;
-    }
-
-    public SmaBluetoothAddress getFrameSourceAddress() {
-        return frameSourceAddress;
-    }
-
-    public void setFrameSourceAddress(SmaBluetoothAddress currentHeaderAddress) {
-        this.frameSourceAddress = currentHeaderAddress;
     }
 
     public byte[] getFrame() {
@@ -103,12 +91,7 @@ public class PPPFrame {
         return frame;
     }
 
-    public static boolean peek(byte[] header, byte address, byte control, short protocol) {
-        return header.length >= 5 && header[0] == HDLC_SYNC && header[1] == address && header[2] == control
-                && be2short(header, 3) == protocol;
-    }
-
-    public static PPPFrame read(InputStream is) throws IOException {
+    protected PPPFrame(InputStream is) throws IOException {
         byte[] header = new byte[5];
         if (is.read(header) < header.length) {
             throw new IOException("EOF");
@@ -118,9 +101,9 @@ public class PPPFrame {
             throw new IOException("SYNC expected");
         }
 
-        byte address = header[1];
-        byte control = header[2];
-        short protocol = (short) be2short(header, 3);
+        address = header[1];
+        control = header[2];
+        protocol = (short) be2short(header, 3);
 
         CRC crc = new CRC();
         for (int i = 1; i < header.length; i++) {
@@ -137,7 +120,7 @@ public class PPPFrame {
         }
 
         byte[] buffer = payloadStream.toByteArray();
-        byte[] payload = Arrays.copyOf(buffer, buffer.length - 2);
+        payload = Arrays.copyOf(buffer, buffer.length - 2);
         short fcsRead = (short) le2short(buffer, buffer.length - 2);
 
         for (int i = 0; i < payload.length; i++) {
@@ -148,10 +131,6 @@ public class PPPFrame {
         if (fcsRead != fcsCalc) {
             throw new IOException("FCS mismatch");
         }
-
-        PPPFrame result = new PPPFrame(address, control, protocol, payload);
-
-        return result;
     }
 
     public void write(OutputStream os) throws IOException {
@@ -162,7 +141,7 @@ public class PPPFrame {
         os.write(HDLC_SYNC);
     }
 
-    private static int be2short(byte[] buffer, int i) {
+    protected static int be2short(byte[] buffer, int i) {
         return ((buffer[i] << 8) & 0xff00) | (buffer[i + 1] & 0xff);
     }
 

@@ -51,6 +51,18 @@ public class Utils {
         return sb.toString();
     }
 
+    public static String bytesToHexRaw(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            sb.append(HEX[v >>> 4]);
+            sb.append(HEX[v & 0x0F]);
+            sb.append(' ');
+        }
+        return sb.toString();
+    }
+
     public static final String bytesToBtAddress(byte[] bytes) {
         int length = bytes.length;
         char[] hexChars = new char[length * 2];

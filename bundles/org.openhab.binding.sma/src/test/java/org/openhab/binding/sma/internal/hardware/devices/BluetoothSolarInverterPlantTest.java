@@ -23,7 +23,7 @@ import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.DeviceClass;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.LRIDefinition;
 import org.openhab.binding.sma.internal.hardware.devices.SmaDevice.SmaUserGroup;
 import org.openhab.binding.sma.internal.layers.BluetoothDebug;
-import org.openhab.binding.sma.internal.layers.SMAPPPFrame;
+import org.openhab.binding.sma.internal.layers.InnerFrame;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.types.State;
@@ -113,7 +113,7 @@ public class BluetoothSolarInverterPlantTest {
                 "7E 12 00 6C 06 B6 15 25 80 00", //
                 "00 00 00 00 00 00 06 00");
 
-        SMAPPPFrame.appSerial = 0x3675605D;
+        InnerFrame.appSerial = 0x3675605D;
 
         // Send broadcast request for identification
         bt.addWriteData( //
@@ -159,7 +159,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testGetData0() {
         BluetoothDebug bt = new BluetoothDebug();
-        SMAPPPFrame.appSerial = 0x38C6DB35;
+        InnerFrame.appSerial = 0x38C6DB35;
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
@@ -716,7 +716,7 @@ public class BluetoothSolarInverterPlantTest {
     @Test
     void testGetData() {
         BluetoothDebug bt = new BluetoothDebug();
-        SMAPPPFrame.appSerial = 934043669;
+        InnerFrame.appSerial = 934043669;
         BluetoothSolarInverterPlant plant = new BluetoothSolarInverterPlant();
 
         // init() -----------------------------------------------------------
