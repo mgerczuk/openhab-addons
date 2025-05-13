@@ -42,15 +42,11 @@ public class SmaBluetoothAddress {
         this.address = new byte[] { 0, 0, 0, 0, 0, 0 };
     }
 
-    public SmaBluetoothAddress(byte[] data, int start) {
-        this.address = new byte[6];
-        this.setAddress(data, start);
-    }
-
     public SmaBluetoothAddress(String address) {
         this(address, 1);
     }
 
+    @Deprecated // use BinaryInputStream
     public final void setAddress(byte[] src, int start) {
         address[0] = src[start + 0];
         address[1] = src[start + 1];
@@ -61,7 +57,7 @@ public class SmaBluetoothAddress {
         // System.arraycopy(src, start, address, 0, 6);
     }
 
-    public final void setBigEndianAddress(byte[] src, int start) {
+    private final void setBigEndianAddress(byte[] src, int start) {
         address[0] = src[start + 5];
         address[1] = src[start + 4];
         address[2] = src[start + 3];
