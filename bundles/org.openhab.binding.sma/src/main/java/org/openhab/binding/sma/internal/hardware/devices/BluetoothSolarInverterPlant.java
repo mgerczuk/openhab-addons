@@ -266,6 +266,14 @@ public class BluetoothSolarInverterPlant {
                     frame = layer.receiveOuterFrame(OuterFrame.CMD_NETW_ESTAB);
                     packetType = frame.getCommand();
                 }
+            } else {
+                try {
+                    frame = layer.receiveOuterFrame(OuterFrame.CMD_ANY);
+                    if (frame.getCommand() != OuterFrame.CMD_UPLINK_TABLE) {
+                        layer.receiveOuterFrame(OuterFrame.CMD_UPLINK_TABLE);
+                    }
+                } catch (IOException e) {
+                }
             }
 
             // prepare some caching
