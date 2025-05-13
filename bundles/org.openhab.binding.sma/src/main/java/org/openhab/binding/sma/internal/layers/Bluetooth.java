@@ -166,10 +166,15 @@ public class Bluetooth {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
                 ppp = SMANetFrame.read(is);
                 ppp.setFrameSourceAddress(lastSourceAddress);
-            }
 
-            rcvpcktID = (ppp == null || ppp.getPayload().length < 24) ? -1
-                    : (short) (Utils.getShort(ppp.getPayload(), 22) & 0x7FFF);
+                try {
+                    BinaryInputStream is2 = new BinaryInputStream(ppp.getPayload());
+                    InnerFrame inner = new InnerFrame();
+                    inner.read(is2);
+                    rcvpcktID = (short) inner.getPcktID();
+                } catch (IOException e) {
+                }
+            }
 
             if (ppp != null) {
                 logger.trace("rcvpcktID id {}", rcvpcktID);

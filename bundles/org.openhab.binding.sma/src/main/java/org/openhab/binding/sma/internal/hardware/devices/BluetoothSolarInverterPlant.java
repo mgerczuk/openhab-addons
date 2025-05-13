@@ -138,22 +138,20 @@ public class BluetoothSolarInverterPlant {
             byte[] data2 = frame.getPayload();
 
             // Get network topology
-            int devcount = 1;
             inverters = new ArrayList<BluetoothSolarInverterPlant.Data>();
 
             for (int ptr = 0; ptr < data2.length; ptr += 8) {
                 SmaBluetoothAddress address = new SmaBluetoothAddress(data2, ptr);
                 // Inverters only - Ignore other devices
                 if (data2[ptr + 6] == 0x01 && data2[ptr + 7] == 0x01) {
-                    logger.debug("Device {}: found SMA Inverter @ {}", devcount, address);
+                    logger.debug("Device {}: found SMA Inverter @ {}", inverters.size(), address);
                     Data inverter = new BluetoothSolarInverterPlant.Data(address);
                     inverter.setNetID(netID);
                     inverters.add(inverter);
                 } else {
                     // other device
-                    logger.debug("Device {}: other device @ {}", devcount, address);
+                    logger.debug("Device {}: other device @ {}", inverters.size(), address);
                 }
-                devcount++;
             }
 
             /***********************************************************************
@@ -230,13 +228,14 @@ public class BluetoothSolarInverterPlant {
                     // Get network topology
                     byte[] data3 = frame.getPayload();
                     int pcktsize = frame.getPayload().length;
-                    devcount = 1;
+                    Data firstInverter = inverters.get(0);
                     inverters.clear();
+                    inverters.add(firstInverter);
 
                     for (int ptr = 0; ptr < pcktsize; ptr += 8) {
                         if (logger.isDebugEnabled()) {
                             SmaBluetoothAddress dest = new SmaBluetoothAddress(data3, ptr);
-                            logger.debug("Device {}: {} -> ", devcount, dest);
+                            logger.debug("Device {}: {} -> ", inverters.size(), dest);
                         }
 
                         // Inverters only - Ignore other devices
@@ -248,8 +247,6 @@ public class BluetoothSolarInverterPlant {
                             BluetoothSolarInverterPlant.Data inverter = new BluetoothSolarInverterPlant.Data(address);
                             inverter.setNetID(netID);
                             inverters.add(inverter);
-
-                            devcount++;
                         }
                     }
                 }
