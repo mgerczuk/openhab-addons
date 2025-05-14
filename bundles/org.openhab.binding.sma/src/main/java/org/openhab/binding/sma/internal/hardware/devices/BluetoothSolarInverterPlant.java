@@ -136,24 +136,25 @@ public class BluetoothSolarInverterPlant {
 
             frame = layer.receiveOuterFrame(OuterFrame.CMD_NODEINFO);
             byte[] data2 = frame.getPayload();
+            BinaryInputStream is1 = new BinaryInputStream(data2);
 
             // Get network topology
-            int devcount = 1;
             inverters = new ArrayList<BluetoothSolarInverterPlant.Data>();
 
-            for (int ptr = 0; ptr < data2.length; ptr += 8) {
-                SmaBluetoothAddress address = new SmaBluetoothAddress(data2, ptr);
+            for (int ptr = 0; ptr < data2.length / 8; ptr++) {
+                SmaBluetoothAddress address = new SmaBluetoothAddress(is1.readBytes(SmaBluetoothAddress.NBYTES));
+                int type = is1.readUShort();
                 // Inverters only - Ignore other devices
-                if (data2[ptr + 6] == 0x01 && data2[ptr + 7] == 0x01) {
-                    logger.debug("Device {}: found SMA Inverter @ {}", devcount, address);
+                if (type == 0x0101) {
+                    logger.debug("Device {}: found SMA Inverter @ {}", ptr, address);
+
                     Data inverter = new BluetoothSolarInverterPlant.Data(address);
                     inverter.setNetID(netID);
                     inverters.add(inverter);
                 } else {
                     // other device
-                    logger.debug("Device {}: other device @ {}", devcount, address);
+                    logger.debug("Device {}: other device @ {}", ptr, address);
                 }
-                devcount++;
             }
 
             /***********************************************************************
@@ -225,31 +226,32 @@ public class BluetoothSolarInverterPlant {
                     /*
                      * Get network topology Overwrite all found inverters
                      * starting at index 1
+                     * i.e. delete all except the first
                      */
 
                     // Get network topology
                     byte[] data3 = frame.getPayload();
-                    int pcktsize = frame.getPayload().length;
-                    devcount = 1;
-                    inverters.clear();
+                    BinaryInputStream is2 = new BinaryInputStream(data3);
 
-                    for (int ptr = 0; ptr < pcktsize; ptr += 8) {
-                        if (logger.isDebugEnabled()) {
-                            SmaBluetoothAddress dest = new SmaBluetoothAddress(data3, ptr);
-                            logger.debug("Device {}: {} -> ", devcount, dest);
-                        }
+                    Data firstInverter = inverters.get(0);
+                    inverters.clear();
+                    inverters.add(firstInverter);
+
+                    for (int ptr = 0; ptr < data3.length / 8; ptr++) {
+                        SmaBluetoothAddress address = new SmaBluetoothAddress(
+                                is2.readBytes(SmaBluetoothAddress.NBYTES));
+                        int type = is2.readUShort();
 
                         // Inverters only - Ignore other devices
-                        if (data3[ptr + 6] == 0x01 && data3[ptr + 7] == 0x01) {
-                            logger.debug("Inverter");
-
-                            SmaBluetoothAddress address = new SmaBluetoothAddress(data3, ptr);
+                        if (type == 0x0101) {
+                            logger.debug("Device {}: found SMA Inverter @ {}", ptr, address);
 
                             BluetoothSolarInverterPlant.Data inverter = new BluetoothSolarInverterPlant.Data(address);
                             inverter.setNetID(netID);
                             inverters.add(inverter);
-
-                            devcount++;
+                        } else {
+                            // other device
+                            logger.debug("Device {}: other device @ {}", ptr, address);
                         }
                     }
                 }
@@ -263,6 +265,14 @@ public class BluetoothSolarInverterPlant {
                 if (OuterFrame.CMD_NETW_ESTAB != packetType) {
                     frame = layer.receiveOuterFrame(OuterFrame.CMD_NETW_ESTAB);
                     packetType = frame.getCommand();
+                }
+            } else {
+                try {
+                    frame = layer.receiveOuterFrame(OuterFrame.CMD_ANY);
+                    if (frame.getCommand() != OuterFrame.CMD_UPLINK_TABLE) {
+                        layer.receiveOuterFrame(OuterFrame.CMD_UPLINK_TABLE);
+                    }
+                } catch (IOException e) {
                 }
             }
 
@@ -592,7 +602,7 @@ public class BluetoothSolarInverterPlant {
                 } while (!validPcktID);
             }
         } catch (IOException e) {
-            logger.warn("getInverterData({}) failed: {}", type, e.getMessage());
+            logger.debug("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
         }
         return true;

@@ -123,7 +123,7 @@ public class Bluetooth {
             }
 
             if ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command)) {
-                logger.info("receiveOuterFrame: expected command {} but was {} - ignored!", wait4Command, command);
+                logger.debug("receiveOuterFrame: expected command {} but was {} - ignored!", wait4Command, command);
             }
         } while ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command));
 
@@ -157,7 +157,7 @@ public class Bluetooth {
                 }
 
                 if ((command != OuterFrame.CMD_USERDATAMORE) && (command != OuterFrame.CMD_USERDATA)) {
-                    logger.info("receivePPPFrame: expecting command CMD_USERDATA* but was {} - ignored!", command);
+                    logger.debug("receivePPPFrame: expecting command CMD_USERDATA* but was {} - ignored!", command);
                 }
 
             } while (command != OuterFrame.CMD_USERDATA);
@@ -166,17 +166,22 @@ public class Bluetooth {
                 ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
                 ppp = SMANetFrame.read(is);
                 ppp.setFrameSourceAddress(lastSourceAddress);
-            }
 
-            rcvpcktID = (ppp == null || ppp.getPayload().length < 24) ? -1
-                    : (short) (Utils.getShort(ppp.getPayload(), 22) & 0x7FFF);
+                try {
+                    BinaryInputStream is2 = new BinaryInputStream(ppp.getPayload());
+                    InnerFrame inner = new InnerFrame();
+                    inner.read(is2);
+                    rcvpcktID = (short) inner.getPcktID();
+                } catch (IOException e) {
+                }
+            }
 
             if (ppp != null) {
                 logger.trace("rcvpcktID id {}", rcvpcktID);
             }
 
             if (rcvpcktID != pktId) {
-                logger.info("receivePPPFrame: expecting pktId {} but was {} - ignored!", pktId, rcvpcktID);
+                logger.debug("receivePPPFrame: expecting pktId {} but was {} - ignored!", pktId, rcvpcktID);
             }
         } while (rcvpcktID != pktId);
 
