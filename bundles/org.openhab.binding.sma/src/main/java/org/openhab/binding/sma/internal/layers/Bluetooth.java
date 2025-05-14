@@ -123,7 +123,7 @@ public class Bluetooth {
             }
 
             if ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command)) {
-                logger.info("receiveOuterFrame: expected command {} but was {} - ignored!", wait4Command, command);
+                logger.debug("receiveOuterFrame: expected command {} but was {} - ignored!", wait4Command, command);
             }
         } while ((command != wait4Command) && (OuterFrame.CMD_ANY != wait4Command));
 
@@ -157,7 +157,7 @@ public class Bluetooth {
                 }
 
                 if ((command != OuterFrame.CMD_USERDATAMORE) && (command != OuterFrame.CMD_USERDATA)) {
-                    logger.info("receivePPPFrame: expecting command CMD_USERDATA* but was {} - ignored!", command);
+                    logger.debug("receivePPPFrame: expecting command CMD_USERDATA* but was {} - ignored!", command);
                 }
 
             } while (command != OuterFrame.CMD_USERDATA);
@@ -181,7 +181,7 @@ public class Bluetooth {
             }
 
             if (rcvpcktID != pktId) {
-                logger.info("receivePPPFrame: expecting pktId {} but was {} - ignored!", pktId, rcvpcktID);
+                logger.debug("receivePPPFrame: expecting pktId {} but was {} - ignored!", pktId, rcvpcktID);
             }
         } while (rcvpcktID != pktId);
 

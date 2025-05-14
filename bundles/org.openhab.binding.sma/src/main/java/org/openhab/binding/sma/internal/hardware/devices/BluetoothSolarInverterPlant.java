@@ -602,7 +602,7 @@ public class BluetoothSolarInverterPlant {
                 } while (!validPcktID);
             }
         } catch (IOException e) {
-            logger.warn("getInverterData({}) failed: {}", type, e.getMessage());
+            logger.debug("getInverterData({}) failed: {}", type, e.getMessage());
             return false;
         }
         return true;
